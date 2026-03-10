@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 // POST /api/auth/signup - 用户注册（发送邮箱验证码）
 export async function POST(request: NextRequest) {
     try {
-        const { email, displayName } = await request.json()
+        const { email, password, displayName } = await request.json()
 
         if (!email) {
             return NextResponse.json({ error: '请输入邮箱地址' }, { status: 400 })
@@ -14,12 +14,12 @@ export async function POST(request: NextRequest) {
         const supabase = await createClient()
 
         // 使用 OTP 方式：发送验证码邮件（magic link / OTP）
-        const { error } = await supabase.auth.signInWithOtp({
+        // 使用 signUp 接口進行郵件+密碼註冊
+        const { error } = await supabase.auth.signUp({
             email,
+            password,
             options: {
-                shouldCreateUser: true,
                 data: { display_name: displayName || email.split('@')[0] },
-                emailRedirectTo: undefined, // 使用 OTP 而非 magic link
             },
         })
 

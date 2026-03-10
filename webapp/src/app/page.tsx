@@ -28,7 +28,7 @@ export default function HomePage() {
           企业出海与投资<br />评估分析系统
         </h1>
         <p style={{ fontSize: '18px', opacity: 0.85, maxWidth: '600px', margin: '0 auto 40px', lineHeight: 1.8 }}>
-          108项指标动态评估 · AI向量数据算法分析 · DeepSeek AI深度分析
+          108项指标动态评估 · AI向量数据算法分析 · AI算法实验室深度分析
           <br />帮助企业客观评估出海潜力与投资价值
         </p>
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -46,7 +46,7 @@ export default function HomePage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
           {[
             { icon: '📊', title: '108项全面评估', desc: '7大维度（团队/产品/市场/财务/运营/战略/可持续性），权重可灵活调整' },
-            { icon: '🤖', title: 'DeepSeek AI分析', desc: 'PESTEL、4P、VRIO深度分析，生成SWOT矩阵与专业投资建议' },
+            { icon: '🤖', title: 'AI算法实验室分析', desc: 'PESTEL、4P、VRIO深度分析，生成SWOT矩阵与专业投资建议' },
             { icon: '📈', title: '可视化图表', desc: '雷达图、柱状图直观呈现核心优势与短板，支持PDF导出' },
             { icon: '🔒', title: '数据安全', desc: 'Supabase数据库存储，评估历史随时查阅，API Key加密保存' },
           ].map((f, i) => (
@@ -86,7 +86,7 @@ export default function HomePage() {
             ))}
           </div>
           <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: '24px', fontSize: '14px' }}>
-            付费后联系管理员获取付款码激活订阅 · DeepSeek API Key需自行申请
+            付费后联系管理员获取付款码激活订阅 · AI算法实验室 API Key需自行申请
           </p>
         </div>
       </div>

@@ -8,7 +8,7 @@ export default function RegisterPage() {
     const [step, setStep] = useState<'form' | 'otp'>('form')
     const [email, setEmail] = useState('')
     const [displayName, setDisplayName] = useState('')
-    const [password, setPassword] = useState('')
+    const [otp, setOtp] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
@@ -19,13 +19,28 @@ export default function RegisterPage() {
         const res = await fetch('/api/auth/signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, displayName }),
+            body: JSON.stringify({ email, displayName }),
         })
         const data = await res.json()
         setLoading(false)
         if (!res.ok) { setError(data.error); return }
-        setSuccess('註冊成功！請前往郵箱查收確認郵件。確認後即可直接使用郵箱與密碼登錄。')
-        setStep('otp') // 這裡復用 OTP 容器作為「等待確認」視圖
+        setSuccess('验证码已发送，请查看邮箱')
+        setStep('otp')
+    }
+
+    async function handleVerify(e: React.FormEvent) {
+        e.preventDefault()
+        setError(''); setLoading(true)
+        const res = await fetch('/api/auth/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, token: otp, type: 'email' }),
+        })
+        const data = await res.json()
+        setLoading(false)
+        if (!res.ok) { setError(data.error); return }
+        router.push('/app')
+        router.refresh()
     }
 
     return (
@@ -53,30 +68,34 @@ export default function RegisterPage() {
                                 <label className="form-label">邮箱地址</label>
                                 <input type="email" className="form-input" value={email}
                                     onChange={e => setEmail(e.target.value)} placeholder="请输入邮箱" required autoFocus />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">设置登录密码</label>
-                                <input type="password" className="form-input" value={password}
-                                    onChange={e => setPassword(e.target.value)} placeholder="请输入密码 (至少6位)" required minLength={6} />
-                                <div className="form-hint">设置密码后，下次登录无需接收验证码</div>
+                                <div className="form-hint">注册成功后可使用邮箱验证码登录，无需记住密码</div>
                             </div>
                             <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
-                                {loading ? <><span className="spinner" /> 注册中...</> : '立即免费注册'}
+                                {loading ? <><span className="spinner" /> 发送中...</> : '发送验证码注册'}
                             </button>
                         </form>
                     ) : (
-                        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>✉️</div>
-                            <h3 style={{ marginBottom: '12px' }}>请确认您的邮箱</h3>
-                            <p style={{ color: 'var(--text-mid)', lineHeight: 1.6, marginBottom: '24px' }}>
-                                我们已向 <strong style={{ color: 'var(--text-dark)' }}>{email}</strong> 发送了一封确认邮件。<br />
-                                请点击邮件中的链接激活账号，激活后即可直接登录。
-                            </p>
-                            <Link href="/login" className="btn btn-primary btn-block">确 认</Link>
-                            <button onClick={() => setStep('form')} style={{ background: 'none', border: 'none', color: 'var(--primary)', marginTop: '16px', cursor: 'pointer' }}>
-                                修改邮箱或密码
+                        <form onSubmit={handleVerify}>
+                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                                <div style={{ fontSize: '40px', marginBottom: '8px' }}>📧</div>
+                                <p style={{ color: 'var(--text-mid)' }}>验证码已发送至</p>
+                                <p style={{ fontWeight: 700 }}>{email}</p>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">输入6位验证码</label>
+                                <input type="text" className="form-input" value={otp}
+                                    onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    placeholder="000000" maxLength={6} required autoFocus
+                                    style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '8px' }} />
+                            </div>
+                            <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading || otp.length !== 6}>
+                                {loading ? <><span className="spinner" /> 注册中...</> : '完成注册'}
                             </button>
-                        </div>
+                            <button type="button" onClick={() => { setStep('form'); setError(''); setSuccess('') }}
+                                style={{ width: '100%', marginTop: '12px', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '14px' }}>
+                                ← 重新输入邮箱
+                            </button>
+                        </form>
                     )}
 
                     <div style={{ textAlign: 'center', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border)', fontSize: '14px', color: 'var(--text-mid)' }}>
@@ -89,8 +108,8 @@ export default function RegisterPage() {
                     <p style={{ color: '#1e40af', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>🎁 免费账号包含：</p>
                     <ul style={{ color: '#1e40af', fontSize: '13px', paddingLeft: '18px', lineHeight: 2 }}>
                         <li>3个完整示例评估报告查看</li>
-                        <li>支持密碼直連，無需頻繁發送驗證碼</li>
-                        <li>隨時可升級為付費會員</li>
+                        <li>注册即可使用，无需信用卡</li>
+                        <li>随时可升级为付费会员</li>
                     </ul>
                 </div>
             </div>

@@ -5,31 +5,14 @@ import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
     const router = useRouter()
-    const [mode, setMode] = useState<'password' | 'otp_request' | 'otp_verify'>('password')
+    const [step, setStep] = useState<'email' | 'otp'>('email')
     const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
     const [otp, setOtp] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
 
-    // 處理密碼登錄
-    async function handlePasswordLogin(e: React.FormEvent) {
-        e.preventDefault()
-        setError(''); setLoading(true)
-        const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-        })
-        const data = await res.json()
-        setLoading(false)
-        if (!res.ok) { setError(data.error); return }
-        router.push('/app')
-        router.refresh()
-    }
-
-    // 發送驗證碼
+    // 第一步：发送验证码
     async function handleSendOtp(e: React.FormEvent) {
         e.preventDefault()
         setError(''); setLoading(true)
@@ -41,11 +24,11 @@ export default function LoginPage() {
         const data = await res.json()
         setLoading(false)
         if (!res.ok) { setError(data.error); return }
-        setSuccess('验证码已发送，请查看邮箱')
-        setMode('otp_verify')
+        setSuccess('验证码已发送，请查看邮箱（可能在垃圾邮件中）')
+        setStep('otp')
     }
 
-    // 驗證 OTP
+    // 第二步：验证 OTP
     async function handleVerifyOtp(e: React.FormEvent) {
         e.preventDefault()
         setError(''); setLoading(true)
@@ -75,62 +58,50 @@ export default function LoginPage() {
                     {error && <div className="alert alert-error">{error}</div>}
                     {success && <div className="alert alert-success">{success}</div>}
 
-                    {mode === 'password' && (
-                        <form onSubmit={handlePasswordLogin}>
-                            <div className="form-group">
-                                <label className="form-label">邮箱地址</label>
-                                <input type="email" className="form-input" value={email}
-                                    onChange={e => setEmail(e.target.value)} placeholder="请输入邮箱" required autoFocus />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">登录密码</label>
-                                <input type="password" className="form-input" value={password}
-                                    onChange={e => setPassword(e.target.value)} placeholder="请输入密码" required />
-                            </div>
-                            <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
-                                {loading ? <><span className="spinner" /> 登录中...</> : '立即登录'}
-                            </button>
-                            <button type="button" onClick={() => setMode('otp_request')}
-                                style={{ width: '100%', marginTop: '16px', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '14px' }}>
-                                使用邮箱验证码登录 (免密)
-                            </button>
-                        </form>
-                    )}
-
-                    {mode === 'otp_request' && (
+                    {step === 'email' ? (
                         <form onSubmit={handleSendOtp}>
                             <div className="form-group">
                                 <label className="form-label">邮箱地址</label>
-                                <input type="email" className="form-input" value={email}
-                                    onChange={e => setEmail(e.target.value)} placeholder="请输入注册邮箱" required autoFocus />
+                                <input
+                                    type="email"
+                                    className="form-input"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    placeholder="请输入注册邮箱"
+                                    required
+                                    autoFocus
+                                />
+                                <div className="form-hint">系统将向您的邮箱发送6位验证码</div>
                             </div>
                             <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
                                 {loading ? <><span className="spinner" /> 发送中...</> : '发送验证码'}
                             </button>
-                            <button type="button" onClick={() => setMode('password')}
-                                style={{ width: '100%', marginTop: '16px', background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontSize: '14px' }}>
-                                ← 返回密码登录
-                            </button>
                         </form>
-                    )}
-
-                    {mode === 'otp_verify' && (
+                    ) : (
                         <form onSubmit={handleVerifyOtp}>
                             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                                 <div style={{ fontSize: '40px', marginBottom: '8px' }}>📧</div>
                                 <p style={{ color: 'var(--text-mid)' }}>验证码已发送至</p>
-                                <p style={{ fontWeight: 700 }}>{email}</p>
+                                <p style={{ fontWeight: 700, color: 'var(--text-dark)' }}>{email}</p>
                             </div>
                             <div className="form-group">
-                                <input type="text" className="form-input" value={otp}
+                                <label className="form-label">输入6位验证码</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={otp}
                                     onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                    placeholder="000000" maxLength={6} required autoFocus
-                                    style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '8px' }} />
+                                    placeholder="000000"
+                                    maxLength={6}
+                                    required
+                                    autoFocus
+                                    style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '8px' }}
+                                />
                             </div>
                             <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading || otp.length !== 6}>
                                 {loading ? <><span className="spinner" /> 验证中...</> : '确认登录'}
                             </button>
-                            <button type="button" onClick={() => setMode('otp_request')}
+                            <button type="button" onClick={() => { setStep('email'); setError(''); setSuccess('') }}
                                 style={{ width: '100%', marginTop: '12px', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '14px' }}>
                                 ← 重新输入邮箱
                             </button>

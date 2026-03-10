@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkUsageLimit, recordUsage } from '@/lib/usage'
 import { decryptApiKey, callDeepSeekAPI } from '@/lib/deepseek'
 
-// POST /api/ai-analyze - 調用 DeepSeek AI 深度分析
+// POST /api/ai-analyze - 調用 AI算法實驗室 AI 深度分析
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient()
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: limitCheck.error }, { status: 403 })
         }
 
-        // 3. 獲取用戶的 DeepSeek API Key
+        // 3. 獲取用戶的 AI算法實驗室 API Key
         const adminClient = createAdminClient()
         const { data: profile } = await adminClient
             .from('profiles')
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         if (!profile?.deepseek_api_key) {
             return NextResponse.json({
                 error: 'API_KEY_MISSING',
-                message: '請先設置 DeepSeek API Key',
+                message: '請先設置 AI算法實驗室 API Key',
             }, { status: 403 })
         }
 
@@ -88,10 +88,12 @@ ${catResults.map((c: any) => `- ${c.name}: ${c.totalPoints}分`).join('\n')}
   "weaknesses": ["劣勢1", "劣勢2", "劣勢3"],
   "investmentSummary": "500字內的總結性建議",
   "pestel": [政治%, 經濟%, 社會%, 技術%, 環境%, 法律%],
-  "vrio": [價值%, 稀缺%, 難模仿%, 組織%]
-}`
+  "vrio": [價值%, 稀缺%, 難模仿%, 組織%],
+  "ai_note": "本報告由 AI算法實驗室 分析生成"
+}
+`
 
-        // 5. 調用 DeepSeek API
+        // 5. 調用 AI API
         let aiResult: any
         try {
             const rawResponse = await callDeepSeekAPI(apiKey, prompt, systemPrompt)

@@ -144,7 +144,7 @@ export default function Navbar({ userEmail }: NavbarProps) {
                                             </div>
                                         )}
                                         <div className="udm-row">
-                                            <span className="udm-label">DeepSeek API Key</span>
+                                            <span className="udm-label">AI算法实验室 API Key</span>
                                             <span className="udm-value" style={{ color: usage.hasApiKey && usage.apiKeyVerified ? 'var(--success)' : 'var(--danger)' }}>
                                                 {usage.hasApiKey && usage.apiKeyVerified ? '✅ 已绑定' : '❌ 未绑定'}
                                             </span>
@@ -170,11 +170,11 @@ export default function Navbar({ userEmail }: NavbarProps) {
                 </div>
             </nav>
 
-            {/* DeepSeek API Key 设置弹窗 */}
+            {/* AI算法实验室 API Key 设置弹窗 */}
             {showApiModal && (
                 <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowApiModal(false)}>
                     <div className="modal-box">
-                        <h3 style={{ marginBottom: '8px' }}>🔑 设置 DeepSeek API Key</h3>
+                        <h3 style={{ marginBottom: '8px' }}>🔑 设置 AI算法实验室 API Key</h3>
                         <p style={{ color: 'var(--text-mid)', fontSize: '13px', marginBottom: '20px' }}>
                             API Key 首次使用后加密保存，后续无需重新输入。
                             请前往 <a href="https://platform.deepseek.com" target="_blank" rel="noopener" style={{ color: 'var(--primary)' }}>platform.deepseek.com</a> 获取 Key。
@@ -182,7 +182,7 @@ export default function Navbar({ userEmail }: NavbarProps) {
                         {msg && <div className={`alert ${msg.startsWith('✅') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
                         <form onSubmit={handleSaveApiKey}>
                             <div className="form-group">
-                                <label className="form-label">DeepSeek API Key</label>
+                                <label className="form-label">AI算法实验室 API Key</label>
                                 <input type="password" className="form-input" value={apiKey}
                                     onChange={e => setApiKey(e.target.value)} placeholder="sk-xxxxxxxxxxxxxxxx" required />
                                 <div className="form-hint">必须以 sk- 开头</div>

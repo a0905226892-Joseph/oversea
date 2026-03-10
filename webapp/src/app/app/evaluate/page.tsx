@@ -29,6 +29,7 @@ function EvaluateContent() {
     const searchParams = useSearchParams()
     const editId = searchParams.get('id')
     const reportRef = useRef<HTMLDivElement>(null)
+    const [isReadOnly, setIsReadOnly] = useState(false)
 
     // --- 狀態管理 ---
     const [loading, setLoading] = useState(false)
@@ -81,6 +82,12 @@ function EvaluateContent() {
                 newValues[mv.metric_id] = mv.value
             })
             setValues(newValues)
+            // 判斷是否為示例數據 (Demo) - 根據 API 返回的標記或 ID
+            if (data.isDemo || id.startsWith('demo-')) {
+                setIsReadOnly(true)
+            } else {
+                setIsReadOnly(false)
+            }
             if (ev.deep_analysis) setAiResult(ev.deep_analysis)
         } catch (err: any) {
             setError(err.message)
@@ -135,6 +142,7 @@ function EvaluateContent() {
 
     // --- 事件處理 ---
     const handleValueChange = (id: string, val: number) => {
+        if (isReadOnly) return
         setValues(prev => ({ ...prev, [id]: val }))
     }
 
@@ -252,7 +260,7 @@ function EvaluateContent() {
                                     fontWeight: activeTab === 'analysis' ? '700' : '400', whiteSpace: 'nowrap'
                                 }}
                             >
-                                🤖 AI 深度報告
+                                🤖 AI 算法实验室報告
                             </button>
                         )}
                     </div>
@@ -267,11 +275,13 @@ function EvaluateContent() {
                                 <div className="form-group" style={{ gridColumn: 'span 2' }}>
                                     <label className="form-label">企業名稱</label>
                                     <input type="text" className="form-input" value={companyInfo.companyName}
+                                        readOnly={isReadOnly}
                                         onChange={e => setCompanyInfo({ ...companyInfo, companyName: e.target.value })} placeholder="請輸入欲評估的公司全稱" />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">所屬行業</label>
                                     <select className="form-select" value={companyInfo.industry}
+                                        disabled={isReadOnly}
                                         onChange={e => setCompanyInfo({ ...companyInfo, industry: e.target.value })}>
                                         <option value="tech">科技/互聯網/AI</option>
                                         <option value="robot">機器人/智能硬件</option>
@@ -286,6 +296,7 @@ function EvaluateContent() {
                                 <div className="form-group">
                                     <label className="form-label">發展/融資階段</label>
                                     <select className="form-select" value={companyInfo.fundingStage}
+                                        disabled={isReadOnly}
                                         onChange={e => setCompanyInfo({ ...companyInfo, fundingStage: e.target.value })}>
                                         <option value="seed">種子輪 (Seed)</option>
                                         <option value="angel">天使輪 (Angel)</option>
@@ -300,6 +311,7 @@ function EvaluateContent() {
                                 <div className="form-group">
                                     <label className="form-label">數據基準日期</label>
                                     <input type="date" className="form-input" value={companyInfo.evaluationDate}
+                                        readOnly={isReadOnly}
                                         onChange={e => setCompanyInfo({ ...companyInfo, evaluationDate: e.target.value })} />
                                 </div>
                             </div>
@@ -326,6 +338,7 @@ function EvaluateContent() {
                                                         className="form-input"
                                                         style={{ width: '85px', textAlign: 'center', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
                                                         value={values[m.id]}
+                                                        readOnly={isReadOnly}
                                                         onChange={e => handleValueChange(m.id, parseFloat(e.target.value) || 0)}
                                                     />
                                                     <span style={{ marginLeft: '8px', fontSize: '13px', color: 'var(--text-mid)', fontWeight: 500 }}>{m.unit}</span>
@@ -338,8 +351,9 @@ function EvaluateContent() {
                                                     max={m.maxValue}
                                                     step={(m.maxValue - m.minValue) / 100 || 0.1}
                                                     value={values[m.id]}
+                                                    disabled={isReadOnly}
                                                     onChange={e => handleValueChange(m.id, parseFloat(e.target.value))}
-                                                    style={{ width: '100%', height: '6px', cursor: 'pointer', appearance: 'none', background: '#e2e8f0', borderRadius: '10px' }}
+                                                    style={{ width: '100%', height: '6px', cursor: isReadOnly ? 'not-allowed' : 'pointer', appearance: 'none', background: '#e2e8f0', borderRadius: '10px' }}
                                                 />
                                             </div>
                                         </div>
@@ -352,7 +366,7 @@ function EvaluateContent() {
                         {activeTab === 'analysis' && aiResult && (
                             <div style={{ animation: 'fadeIn 0.5s ease' }}>
                                 <div className="alert alert-info" style={{ marginBottom: '24px', background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe' }}>
-                                    🤖 <strong>DeepSeek AI 已基於 108 個維度生成深度見解</strong>
+                                    🤖 <strong>AI 算法实验室 已基於 108 個維度生成深度見解</strong>
                                 </div>
 
                                 <div style={{ display: 'grid', gap: '24px' }}>
@@ -403,11 +417,11 @@ function EvaluateContent() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    <button onClick={handleSave} className="btn btn-primary btn-lg" disabled={saveLoading}>
-                        {saveLoading ? <span className="spinner" /> : '💾 保存評估報告'}
+                    <button onClick={handleSave} className="btn btn-primary btn-lg" disabled={saveLoading || isReadOnly}>
+                        {saveLoading ? <span className="spinner" /> : isReadOnly ? '🔒 示例數據不可修改' : '💾 保存評估報告'}
                     </button>
 
-                    <button onClick={handleAiAnalyze} className="btn btn-lg" style={{ background: '#7c3aed', color: '#fff' }} disabled={aiLoading || !editId}>
+                    <button onClick={handleAiAnalyze} className="btn btn-lg" style={{ background: '#7c3aed', color: '#fff' }} disabled={aiLoading || !editId || (isReadOnly && aiResult)}>
                         {aiLoading ? <span className="spinner" /> : '🤖 AI 深度分析'}
                     </button>
 
@@ -462,7 +476,7 @@ function EvaluateContent() {
 
                     {aiResult && (
                         <div>
-                            <h3 style={{ color: '#1e3a5f', borderLeft: '4px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px' }}>🤖 AI 專家深度洞察</h3>
+                            <h3 style={{ color: '#1e3a5f', borderLeft: '4px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px' }}>🤖 AI 算法实验室 專家深度洞察</h3>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
                                 <div style={{ padding: '20px', background: '#f0fdf4', borderRadius: '12px' }}>
                                     <h4 style={{ color: '#166534', margin: '0 0 10px 0' }}>優勢總結</h4>
