@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+
+# Production
+build/
+
+# Misc
+.DS_Store
+*.pem
+.env*
+.vercel
+
+# Backups
+*_backup_*/
+index_*.html
+webapp_backup_*/
+
+# Local Task/Plan files
+.gemini/
+/brain/
+/md文件夾/
+/temp/

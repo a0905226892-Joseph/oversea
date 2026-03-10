@@ -1,0 +1,21 @@
+{
+  "name": "企业出海与投资评估分析系统",
+  "short_name": "出海评估",
+  "description": "企业出海与投资评估分析系统 - 算法实验室 AI集成版",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5f8fa",
+  "theme_color": "#3498db",
+  "icons": [
+    {
+      "src": "icon/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
