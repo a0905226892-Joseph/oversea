@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { decryptApiKey, callDeepSeekAPI } from '@/lib/deepseek';
+import { decryptApiKey, callAiLabAPI } from '@/lib/ai-lab';
 
 /**
  * POST /api/assessment/market-match
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
             }
         `;
 
-        const response = await callDeepSeekAPI(apiKey, prompt, systemPrompt);
+        const response = await callAiLabAPI(apiKey, prompt, systemPrompt);
 
         // 嘗試提取 JSON
         const jsonMatch = response.match(/\{[\s\S]*\}/);

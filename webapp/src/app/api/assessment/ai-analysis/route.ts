@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { decryptApiKey, callDeepSeekAPI } from '@/lib/deepseek';
+import { decryptApiKey, callAiLabAPI } from '@/lib/ai-lab';
 
 /**
  * POST /api/assessment/ai-analysis
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 3. 調用 AI
-        const response = await callDeepSeekAPI(apiKey, userPrompt, systemPrompt);
+        const response = await callAiLabAPI(apiKey, userPrompt, systemPrompt);
 
         return NextResponse.json({ content: response });
     } catch (error: any) {

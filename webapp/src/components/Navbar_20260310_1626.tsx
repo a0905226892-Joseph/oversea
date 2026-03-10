@@ -54,7 +54,7 @@ export default function Navbar({ userEmail }: NavbarProps) {
     async function handleSaveApiKey(e: React.FormEvent) {
         e.preventDefault()
         setLoading(true); setMsg('')
-        const res = await fetch('/api/ai-lab/verify', {
+        const res = await fetch('/api/deepseek/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ apiKey }),
@@ -180,7 +180,7 @@ export default function Navbar({ userEmail }: NavbarProps) {
                         <h3 style={{ marginBottom: '8px' }}>🔑 设置 AI算法实验室 API Key</h3>
                         <p style={{ color: 'var(--text-mid)', fontSize: '13px', marginBottom: '20px' }}>
                             API Key 首次使用后加密保存，后续无需重新输入。
-                            请前往 <a href="https://platform.deepseek.com" target="_blank" rel="noopener" style={{ color: 'var(--primary)' }}>AI 服務官網</a> 获取 Key。
+                            请前往 <a href="https://platform.deepseek.com" target="_blank" rel="noopener" style={{ color: 'var(--primary)' }}>platform.deepseek.com</a> 获取 Key。
                         </p>
                         {msg && <div className={`alert ${msg.startsWith('✅') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
                         <form onSubmit={handleSaveApiKey}>

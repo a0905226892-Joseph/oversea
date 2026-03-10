@@ -1,7 +1,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkUsageLimit, recordUsage } from '@/lib/usage'
-import { decryptApiKey, callDeepSeekAPI } from '@/lib/deepseek'
+import { decryptApiKey, callAiLabAPI } from '@/lib/ai-lab'
 
 // POST /api/ai-analyze - 調用 AI算法實驗室 AI 深度分析
 export async function POST(request: NextRequest) {
@@ -96,7 +96,7 @@ ${catResults.map((c: any) => `- ${c.name}: ${c.totalPoints}分`).join('\n')}
         // 5. 調用 AI API
         let aiResult: any
         try {
-            const rawResponse = await callDeepSeekAPI(apiKey, prompt, systemPrompt)
+            const rawResponse = await callAiLabAPI(apiKey, prompt, systemPrompt)
             const jsonMatch = rawResponse.match(/\{[\s\S]*\}/)
             if (jsonMatch) {
                 aiResult = JSON.parse(jsonMatch[0])
