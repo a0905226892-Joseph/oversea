@@ -64,8 +64,9 @@ webapp/
 ### 第三步：部署到 Vercel
 
 1. 登录 [vercel.com](https://vercel.com)，点击 **Add New Project**
-2. 导入 GitHub 仓库（或直接上传 webapp 文件夹）
-3. 在 **Environment Variables** 中填写以下变量：
+2. 导入 GitHub 仓库。
+3. **关键设置：** 在 **Framework Preset** 下方的 **Root Directory**，点击 **Edit** 并选择 **`webapp`** 文件夹。
+4. 在 **Environment Variables** 中填写以下变量：
 
    | 变量名 | 值 |
    |---|---|
