@@ -97,18 +97,12 @@ export default function Navbar({ userEmail }: NavbarProps) {
             <nav className="navbar">
                 <div className="navbar-inner">
                     <Link href="/app" className="navbar-brand">
-                        🚀 <span>企业出海评估系统</span>
+                        🚀 <span>AI算法實驗室</span>
                     </Link>
                     <div className="navbar-nav">
-                        <Link href="/app/demo" className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
-                            示例报告
-                        </Link>
-                        <Link href="/pricing" className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
-                            升级订阅
-                        </Link>
                         <div className="user-dropdown" ref={dropRef}>
                             <button className="user-btn" onClick={() => setDropOpen(!dropOpen)}>
-                                👤 {userEmail?.split('@')[0] || '账号'}
+                                👤 {userEmail?.split('@')[0] || '帳號'}
                                 {usage && <span className={`badge ${tierClass[usage.tier]}`} style={{ fontSize: '11px', marginLeft: '4px' }}>{tierLabel[usage.tier]}</span>}
                                 <span style={{ fontSize: '10px', opacity: 0.7 }}>▼</span>
                             </button>
@@ -117,7 +111,7 @@ export default function Navbar({ userEmail }: NavbarProps) {
                                 {usage && (
                                     <>
                                         <div className="udm-row">
-                                            <span className="udm-label">会员等级</span>
+                                            <span className="udm-label">會員等級</span>
                                             <span className={`badge ${tierClass[usage.tier]}`}>{tierLabel[usage.tier]}</span>
                                         </div>
                                         {usage.subscriptionExpiresAt && (
@@ -125,13 +119,13 @@ export default function Navbar({ userEmail }: NavbarProps) {
                                                 <span className="udm-label">到期日</span>
                                                 <span className="udm-value" style={{ color: usage.isExpired ? 'var(--danger)' : 'var(--success)' }}>
                                                     {new Date(usage.subscriptionExpiresAt).toLocaleDateString('zh-CN')}
-                                                    {usage.isExpired && ' (已过期)'}
+                                                    {usage.isExpired && ' (已過期)'}
                                                 </span>
                                             </div>
                                         )}
                                         {usage.tier === 'standard' && (
                                             <div className="udm-row">
-                                                <span className="udm-label">本年剩余次数</span>
+                                                <span className="udm-label">本年剩餘次數</span>
                                                 <span className="udm-value" style={{ color: (usage.remaining || 0) < 10 ? 'var(--warning)' : 'var(--success)' }}>
                                                     {usage.remaining}/100 次
                                                 </span>
@@ -139,32 +133,35 @@ export default function Navbar({ userEmail }: NavbarProps) {
                                         )}
                                         {usage.tier === 'premium' && (
                                             <div className="udm-row">
-                                                <span className="udm-label">使用次数</span>
-                                                <span className="udm-value" style={{ color: 'var(--success)' }}>无限次</span>
+                                                <span className="udm-label">使用次數</span>
+                                                <span className="udm-value" style={{ color: 'var(--success)' }}>無限次</span>
                                             </div>
                                         )}
                                         <div className="udm-row">
-                                            <span className="udm-label">AI算法实验室 API Key</span>
+                                            <span className="udm-label">AI算法實驗室 API Key</span>
                                             <span className="udm-value" style={{ color: usage.hasApiKey && usage.apiKeyVerified ? 'var(--success)' : 'var(--danger)' }}>
-                                                {usage.hasApiKey && usage.apiKeyVerified ? '✅ 已绑定' : '❌ 未绑定'}
+                                                {usage.hasApiKey && usage.apiKeyVerified ? '✅ 已綁定' : '❌ 未綁定'}
                                             </span>
                                         </div>
                                     </>
                                 )}
                                 <div className="udm-actions">
+                                    <Link href="/pricing" className="btn btn-sm" style={{ background: 'var(--primary)', color: '#fff', width: '100%', justifyContent: 'center' }}>
+                                        🔥 升級訂閱
+                                    </Link>
                                     <button onClick={() => { setShowApiModal(true); setDropOpen(false); setMsg('') }}
                                         className="btn btn-sm" style={{ background: '#7c3aed', color: '#fff' }}>
-                                        🔑 {usage?.hasApiKey ? '修改 API Key' : '设置 API Key'}
+                                        🔑 {usage?.hasApiKey ? '修改 API Key' : '設置 API Key'}
                                     </button>
                                     <button onClick={() => { setShowRedeemModal(true); setDropOpen(false); setMsg('') }}
                                         className="btn btn-sm btn-primary">
-                                        🎫 输入付款码升级
+                                        🎫 輸入付款碼升級
                                     </button>
                                     <Link href="/app/settings" className="btn btn-sm btn-ghost" style={{ width: '100%', justifyContent: 'center', color: 'var(--text-mid)', border: '1px solid var(--border)' }}>
                                         ⚙️ 個人設置
                                     </Link>
                                     <button onClick={handleLogout} className="btn btn-sm" style={{ background: '#f1f5f9', color: 'var(--text-mid)' }}>
-                                        退出登录
+                                        退出登錄
                                     </button>
                                 </div>
                             </div>
@@ -180,7 +177,7 @@ export default function Navbar({ userEmail }: NavbarProps) {
                         <h3 style={{ marginBottom: '8px' }}>🔑 设置 AI算法实验室 API Key</h3>
                         <p style={{ color: 'var(--text-mid)', fontSize: '13px', marginBottom: '20px' }}>
                             API Key 首次使用后加密保存，后续无需重新输入。
-                            请前往 <a href="https://platform.deepseek.com" target="_blank" rel="noopener" style={{ color: 'var(--primary)' }}>AI 服務官網</a> 获取 Key。
+                            請前往 <a href="#" target="_blank" rel="noopener" style={{ color: 'var(--primary)' }}>AI 服務官網</a> 獲取 Key。
                         </p>
                         {msg && <div className={`alert ${msg.startsWith('✅') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
                         <form onSubmit={handleSaveApiKey}>
