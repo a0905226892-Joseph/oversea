@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { encryptApiKey, verifyDeepSeekApiKey } from '@/lib/deepseek'
 
-// POST /api/deepseek/verify - 验证并保存 DeepSeek API Key
+// POST /api/deepseek/verify - 验证并保存 AI 算法实验室 API Key
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient()

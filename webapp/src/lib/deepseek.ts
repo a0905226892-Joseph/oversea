@@ -13,7 +13,7 @@ export function decryptApiKey(encryptedKey: string): string {
     return bytes.toString(CryptoJS.enc.Utf8)
 }
 
-// 验证 DeepSeek API Key 有效性
+// 验证 AI 算法实验室 API Key 有效性
 export async function verifyDeepSeekApiKey(apiKey: string): Promise<boolean> {
     try {
         const response = await fetch('https://api.deepseek.com/chat/completions', {
@@ -35,7 +35,7 @@ export async function verifyDeepSeekApiKey(apiKey: string): Promise<boolean> {
     }
 }
 
-// 调用 DeepSeek API 进行分析
+// 调用 AI 算法实验室 API 进行分析
 export async function callDeepSeekAPI(
     apiKey: string,
     prompt: string,
@@ -62,7 +62,7 @@ export async function callDeepSeekAPI(
         if (response.status === 401) {
             throw new Error('API_KEY_INVALID')
         }
-        throw new Error(`DeepSeek API 错误: ${response.statusText}`)
+        throw new Error(`AI 算法实验室 API 错误: ${response.statusText}`)
     }
 
     const data = await response.json()
