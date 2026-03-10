@@ -94,81 +94,94 @@ export default function Navbar({ userEmail }: NavbarProps) {
 
     return (
         <>
-            <nav className="navbar">
-                <div className="navbar-inner">
-                    <Link href="/app" className="navbar-brand">
-                        🚀 <span>AI算法實驗室</span>
-                    </Link>
-                    <div className="navbar-nav">
-                        <div className="user-dropdown" ref={dropRef}>
-                            <button className="user-btn" onClick={() => setDropOpen(!dropOpen)}>
-                                👤 {userEmail?.split('@')[0] || '帳號'}
-                                {usage && <span className={`badge ${tierClass[usage.tier]}`} style={{ fontSize: '11px', marginLeft: '4px' }}>{tierLabel[usage.tier]}</span>}
-                                <span style={{ fontSize: '10px', opacity: 0.7 }}>▼</span>
-                            </button>
-                            <div className={`user-dropdown-menu ${dropOpen ? 'open' : ''}`}>
-                                <div className="udm-email">📧 {userEmail}</div>
-                                {usage && (
-                                    <>
-                                        <div className="udm-row">
-                                            <span className="udm-label">會員等級</span>
-                                            <span className={`badge ${tierClass[usage.tier]}`}>{tierLabel[usage.tier]}</span>
-                                        </div>
-                                        {usage.subscriptionExpiresAt && (
-                                            <div className="udm-row">
-                                                <span className="udm-label">到期日</span>
-                                                <span className="udm-value" style={{ color: usage.isExpired ? 'var(--danger)' : 'var(--success)' }}>
-                                                    {new Date(usage.subscriptionExpiresAt).toLocaleDateString('zh-CN')}
-                                                    {usage.isExpired && ' (已過期)'}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {usage.tier === 'standard' && (
-                                            <div className="udm-row">
-                                                <span className="udm-label">本年剩餘次數</span>
-                                                <span className="udm-value" style={{ color: (usage.remaining || 0) < 10 ? 'var(--warning)' : 'var(--success)' }}>
-                                                    {usage.remaining}/100 次
-                                                </span>
-                                            </div>
-                                        )}
-                                        {usage.tier === 'premium' && (
-                                            <div className="udm-row">
-                                                <span className="udm-label">使用次數</span>
-                                                <span className="udm-value" style={{ color: 'var(--success)' }}>無限次</span>
-                                            </div>
-                                        )}
-                                        <div className="udm-row">
-                                            <span className="udm-label">AI算法實驗室 API Key</span>
-                                            <span className="udm-value" style={{ color: usage.hasApiKey && usage.apiKeyVerified ? 'var(--success)' : 'var(--danger)' }}>
-                                                {usage.hasApiKey && usage.apiKeyVerified ? '✅ 已綁定' : '❌ 未綁定'}
-                                            </span>
-                                        </div>
-                                    </>
-                                )}
-                                <div className="udm-actions">
-                                    <Link href="/pricing" className="btn btn-sm" style={{ background: 'var(--primary)', color: '#fff', width: '100%', justifyContent: 'center' }}>
-                                        🔥 升級訂閱
-                                    </Link>
-                                    <button onClick={() => { setShowApiModal(true); setDropOpen(false); setMsg('') }}
-                                        className="btn btn-sm" style={{ background: '#7c3aed', color: '#fff' }}>
-                                        🔑 {usage?.hasApiKey ? '修改 API Key' : '設置 API Key'}
-                                    </button>
-                                    <button onClick={() => { setShowRedeemModal(true); setDropOpen(false); setMsg('') }}
-                                        className="btn btn-sm btn-primary">
-                                        🎫 輸入付款碼升級
-                                    </button>
-                                    <Link href="/app/settings" className="btn btn-sm btn-ghost" style={{ width: '100%', justifyContent: 'center', color: 'var(--text-mid)', border: '1px solid var(--border)' }}>
-                                        ⚙️ 個人設置
-                                    </Link>
-                                    <button onClick={handleLogout} className="btn btn-sm" style={{ background: '#f1f5f9', color: 'var(--text-mid)' }}>
-                                        退出登錄
-                                    </button>
+            <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 1000 }}>
+                <div className="user-dropdown" ref={dropRef}>
+                    <button className="user-btn" onClick={() => setDropOpen(!dropOpen)} style={{
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        padding: '8px 16px',
+                        borderRadius: '30px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: '#1e293b',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}>
+                        <span>👤 {userEmail?.split('@')[0] || '帳號'}</span>
+                        {usage && <span className={`badge ${tierClass[usage.tier]}`} style={{ fontSize: '11px', padding: '2px 8px' }}>{tierLabel[usage.tier]}</span>}
+                        <span style={{ fontSize: '10px', opacity: 0.7, marginLeft: '4px' }}>▼</span>
+                    </button>
+                    <div className={`user-dropdown-menu ${dropOpen ? 'open' : ''}`} style={{
+                        right: 0,
+                        left: 'auto',
+                        marginTop: '10px',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                        border: '1px solid #e2e8f0'
+                    }}>
+                        <div className="udm-email">📧 {userEmail}</div>
+                        {usage && (
+                            <>
+                                <div className="udm-row">
+                                    <span className="udm-label">會員等級</span>
+                                    <span className={`badge ${tierClass[usage.tier]}`}>{tierLabel[usage.tier]}</span>
                                 </div>
-                            </div>
+                                {usage.subscriptionExpiresAt && (
+                                    <div className="udm-row">
+                                        <span className="udm-label">到期日</span>
+                                        <span className="udm-value" style={{ color: usage.isExpired ? 'var(--danger)' : 'var(--success)' }}>
+                                            {new Date(usage.subscriptionExpiresAt).toLocaleDateString('zh-CN')}
+                                            {usage.isExpired && ' (已過期)'}
+                                        </span>
+                                    </div>
+                                )}
+                                {usage.tier === 'standard' && (
+                                    <div className="udm-row">
+                                        <span className="udm-label">本年剩餘次數</span>
+                                        <span className="udm-value" style={{ color: (usage.remaining || 0) < 10 ? 'var(--warning)' : 'var(--success)' }}>
+                                            {usage.remaining}/100 次
+                                        </span>
+                                    </div>
+                                )}
+                                {usage.tier === 'premium' && (
+                                    <div className="udm-row">
+                                        <span className="udm-label">使用次數</span>
+                                        <span className="udm-value" style={{ color: 'var(--success)' }}>無限次</span>
+                                    </div>
+                                )}
+                                <div className="udm-row">
+                                    <span className="udm-label">AI算法實驗室 API Key</span>
+                                    <span className="udm-value" style={{ color: usage.hasApiKey && usage.apiKeyVerified ? 'var(--success)' : 'var(--danger)' }}>
+                                        {usage.hasApiKey && usage.apiKeyVerified ? '✅ 已綁定' : '❌ 未綁定'}
+                                    </span>
+                                </div>
+                            </>
+                        )}
+                        <div className="udm-actions">
+                            <Link href="/pricing" className="btn btn-sm" style={{ background: 'var(--primary)', color: '#fff', width: '100%', justifyContent: 'center' }}>
+                                🔥 升級訂閱
+                            </Link>
+                            <button onClick={() => { setShowApiModal(true); setDropOpen(false); setMsg('') }}
+                                className="btn btn-sm" style={{ background: '#7c3aed', color: '#fff' }}>
+                                🔑 {usage?.hasApiKey ? '修改 API Key' : '設置 API Key'}
+                            </button>
+                            <button onClick={() => { setShowRedeemModal(true); setDropOpen(false); setMsg('') }}
+                                className="btn btn-sm btn-primary">
+                                🎫 輸入付款碼升級
+                            </button>
+                            <Link href="/app/settings" className="btn btn-sm btn-ghost" style={{ width: '100%', justifyContent: 'center', color: 'var(--text-mid)', border: '1px solid var(--border)' }}>
+                                ⚙️ 個人設置
+                            </Link>
+                            <button onClick={handleLogout} className="btn btn-sm" style={{ background: '#f1f5f9', color: 'var(--text-mid)' }}>
+                                退出登錄
+                            </button>
                         </div>
                     </div>
                 </div>
-            </nav>
+            </div>
 
             {/* AI算法实验室 API Key 设置弹窗 */}
             {showApiModal && (
