@@ -160,6 +160,9 @@ export default function Navbar({ userEmail }: NavbarProps) {
                                         className="btn btn-sm btn-primary">
                                         🎫 输入付款码升级
                                     </button>
+                                    <Link href="/app/settings" className="btn btn-sm btn-ghost" style={{ width: '100%', justifyContent: 'center', color: 'var(--text-mid)', border: '1px solid var(--border)' }}>
+                                        ⚙️ 個人設置
+                                    </Link>
                                     <button onClick={handleLogout} className="btn btn-sm" style={{ background: '#f1f5f9', color: 'var(--text-mid)' }}>
                                         退出登录
                                     </button>
