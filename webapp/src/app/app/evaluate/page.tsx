@@ -1678,8 +1678,27 @@ function EvaluateContent() {
                             <p style={{ color: '#64748b', fontSize: '14px', marginTop: '8px' }}>请点击下方区块按钮展开对应指标，为每个指标输入数值，评分和权重可以手动调整，评分×权重=计分</p>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px', fontWeight: 700, color: '#1e40af' }}>
-                            权重总和：<span style={{ color: 'var(--primary)', fontSize: '18px' }}>{(assessmentResult?.totalWeight || liveAssessmentResult.totalWeight || 0).toFixed(1)}</span>%
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '24px', gap: '24px' }}>
+                            <span style={{ fontWeight: 700, color: '#1e40af' }}>
+                                权重总和：<span style={{ color: 'var(--primary)', fontSize: '18px' }}>{(assessmentResult?.totalWeight || liveAssessmentResult.totalWeight || 0).toFixed(1)}</span>%
+                            </span>
+                            <button
+                                onClick={() => silentCalculate(values)}
+                                style={{
+                                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '10px 24px',
+                                    borderRadius: '10px',
+                                    fontWeight: 700,
+                                    fontSize: '15px',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 12px rgba(59,130,246,0.4)',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                📊 重新计算所有评分
+                            </button>
                         </div>
 
                         {/* 7 大维度入口卡片 (对齐截图颜色与布局) */}
@@ -1720,7 +1739,7 @@ function EvaluateContent() {
                                     >
                                         <span style={{ fontSize: '28px' }}>{cfg.icon}</span>
                                         <div style={{ fontWeight: 800, fontSize: '15px', whiteSpace: 'nowrap' }}>{cat.name}</div>
-                                        <div style={{ fontSize: '36px', fontWeight: 900 }}>{(catScore?.points || 0).toFixed(1)}</div>
+                                        <div style={{ fontSize: '36px', fontWeight: 900 }}>{(catScore?.score || 0).toFixed(0)}</div>
                                         <div style={{ fontSize: '12px', opacity: 0.9 }}>
                                             {metrics.filter(m => m.category === cat.id).length}项指标 | {(catScore?.totalWeight || 0).toFixed(1)}%权重
                                         </div>
@@ -1761,7 +1780,7 @@ function EvaluateContent() {
                                     >
                                         <span style={{ fontSize: '28px' }}>{cfg.icon}</span>
                                         <div style={{ fontWeight: 800, fontSize: '15px' }}>{cat.name}</div>
-                                        <div style={{ fontSize: '36px', fontWeight: 900 }}>{(catScore?.points || 0).toFixed(1)}</div>
+                                        <div style={{ fontSize: '36px', fontWeight: 900 }}>{(catScore?.score || 0).toFixed(0)}</div>
                                         <div style={{ fontSize: '12px', opacity: 0.9 }}>
                                             {metrics.filter(m => m.category === cat.id).length}项指标 | {(catScore?.totalWeight || 0).toFixed(1)}%权重
                                         </div>
