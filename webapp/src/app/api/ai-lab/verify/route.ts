@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         const adminClient = createAdminClient()
         const { error } = await adminClient
             .from('profiles')
-            .update({ deepseek_api_key: encryptedKey, api_key_verified: true })
+            .update({ ai_lab_api_key: encryptedKey, api_key_verified: true })
             .eq('id', user.id)
 
         if (error) {
@@ -54,12 +54,12 @@ export async function GET() {
 
         const { data } = await supabase
             .from('profiles')
-            .select('api_key_verified, deepseek_api_key')
+            .select('api_key_verified, ai_lab_api_key')
             .eq('id', user.id)
             .single()
 
         return NextResponse.json({
-            hasKey: !!data?.deepseek_api_key,
+            hasKey: !!data?.ai_lab_api_key,
             verified: data?.api_key_verified || false,
         })
     } catch {

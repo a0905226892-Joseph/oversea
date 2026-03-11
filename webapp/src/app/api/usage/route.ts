@@ -16,7 +16,7 @@ export async function GET() {
         // 获取用户信息和使用次数
         const { data: profile } = await supabase
             .from('profiles')
-            .select('subscription_tier, subscription_expires_at, api_key_verified, deepseek_api_key')
+            .select('subscription_tier, subscription_expires_at, api_key_verified, ai_lab_api_key')
             .eq('id', user.id)
             .single()
 
@@ -38,7 +38,7 @@ export async function GET() {
             used,
             limit,
             remaining,
-            hasApiKey: !!profile?.deepseek_api_key,
+            hasApiKey: !!profile?.ai_lab_api_key,
             apiKeyVerified: profile?.api_key_verified || false,
         })
     } catch {

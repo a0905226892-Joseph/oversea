@@ -21,15 +21,15 @@ export async function POST(request: NextRequest) {
         const adminClient = createAdminClient();
         const { data: profile } = await adminClient
             .from('profiles')
-            .select('deepseek_api_key')
+            .select('ai_lab_api_key')
             .eq('id', user.id)
             .single();
 
-        if (!profile?.deepseek_api_key) {
-            return NextResponse.json({ error: 'MISSING_API_KEY', message: '請先設置 API Key' }, { status: 403 });
+        if (!profile?.ai_lab_api_key) {
+            return NextResponse.json({ error: 'MISSING_API_KEY', message: '請先在設置中配置 API Key' }, { status: 403 });
         }
 
-        const apiKey = decryptApiKey(profile.deepseek_api_key);
+        const apiKey = decryptApiKey(profile.ai_lab_api_key);
 
         const systemPrompt = "你是一位資深國際市場戰略分析師，專注於中國企業出海策略。必須返回標準的 JSON 格式，不要包含任何文字說明。";
         const prompt = `

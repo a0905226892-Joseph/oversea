@@ -42,18 +42,18 @@ export async function POST(request: NextRequest) {
         const adminClient = createAdminClient()
         const { data: profile } = await adminClient
             .from('profiles')
-            .select('deepseek_api_key, api_key_verified')
+            .select('ai_lab_api_key, api_key_verified')
             .eq('id', user.id)
             .single()
 
-        if (!profile?.deepseek_api_key) {
+        if (!profile?.ai_lab_api_key) {
             return NextResponse.json({
                 error: 'API_KEY_MISSING',
                 message: '請先設置 AI算法實驗室 API Key',
             }, { status: 403 })
         }
 
-        const apiKey = decryptApiKey(profile.deepseek_api_key)
+        const apiKey = decryptApiKey(profile.ai_lab_api_key)
 
         // 4. 準備 Prompt 數據
         const results = evaluation.results?.finalResult || {}

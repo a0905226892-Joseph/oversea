@@ -41,3 +41,11 @@ yarn-error.log*
 
 # local backups
 backup_md/
+*_2026*
+*.html
+*.jsx
+*.js
+!src/**/*.html
+!src/**/*.css
+!src/**/*.tsx
+!src/**/*.ts

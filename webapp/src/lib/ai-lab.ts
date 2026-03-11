@@ -28,7 +28,6 @@ export async function verifyAiLabApiKey(apiKey: string): Promise<boolean> {
                 max_tokens: 1,
             }),
         })
-        // 返回 200 或 400（参数错误）都说明 Key 有效，401 说明无效
         return response.status !== 401
     } catch {
         return false
@@ -39,8 +38,16 @@ export async function verifyAiLabApiKey(apiKey: string): Promise<boolean> {
 export async function callAiLabAPI(
     apiKey: string,
     prompt: string,
-    systemPrompt: string
+    systemPrompt: string,
+    config?: { model?: string; temperature?: number; maxTokens?: number }
 ): Promise<string> {
+    // 映射識別符回真實模型名
+    const modelMap: Record<string, string> = {
+        'ai-lab-chat': 'deepseek-chat',
+        'ai-lab-reasoning': 'deepseek-reasoning'
+    };
+    const realModel = modelMap[config?.model || ''] || 'deepseek-chat';
+
     const response = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
         headers: {
@@ -48,13 +55,13 @@ export async function callAiLabAPI(
             'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-            model: 'deepseek-chat',
+            model: realModel,
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: prompt },
             ],
-            max_tokens: 4000,
-            temperature: 0.7,
+            max_tokens: config?.maxTokens || 4000,
+            temperature: config?.temperature ?? 0.7,
         }),
     })
 
@@ -62,7 +69,7 @@ export async function callAiLabAPI(
         if (response.status === 401) {
             throw new Error('API_KEY_INVALID')
         }
-        throw new Error(`AI 算法实验室 API 错误: ${response.statusText}`)
+        throw new Error(`AI 算法實驗室 API 錯誤: ${response.statusText}`)
     }
 
     const data = await response.json()

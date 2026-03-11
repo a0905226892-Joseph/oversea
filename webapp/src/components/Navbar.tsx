@@ -109,11 +109,10 @@ export default function Navbar({ userEmail }: NavbarProps) {
                         color: '#1e293b',
                         fontWeight: 600,
                         cursor: 'pointer',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.2s',
+                        zIndex: 1000
                     }}>
                         <span>👤 {userEmail?.split('@')[0] || '帳號'}</span>
-                        {usage && <span className={`badge ${tierClass[usage.tier]}`} style={{ fontSize: '11px', padding: '2px 8px' }}>{tierLabel[usage.tier]}</span>}
-                        <span style={{ fontSize: '10px', opacity: 0.7, marginLeft: '4px' }}>▼</span>
                     </button>
                     <div className={`user-dropdown-menu ${dropOpen ? 'open' : ''}`} style={{
                         right: 0,
@@ -153,7 +152,7 @@ export default function Navbar({ userEmail }: NavbarProps) {
                                     </div>
                                 )}
                                 <div className="udm-row">
-                                    <span className="udm-label">AI算法實驗室 API Key</span>
+                                    <span className="udm-label">API Key狀態</span>
                                     <span className="udm-value" style={{ color: usage.hasApiKey && usage.apiKeyVerified ? 'var(--success)' : 'var(--danger)' }}>
                                         {usage.hasApiKey && usage.apiKeyVerified ? '✅ 已綁定' : '❌ 未綁定'}
                                     </span>
@@ -166,12 +165,15 @@ export default function Navbar({ userEmail }: NavbarProps) {
                             </Link>
                             <button onClick={() => { setShowApiModal(true); setDropOpen(false); setMsg('') }}
                                 className="btn btn-sm" style={{ background: '#7c3aed', color: '#fff' }}>
-                                🔑 {usage?.hasApiKey ? '修改 API Key' : '設置 API Key'}
+                                �� {usage?.hasApiKey ? '修改 API Key' : '設置 API Key'}
                             </button>
                             <button onClick={() => { setShowRedeemModal(true); setDropOpen(false); setMsg('') }}
                                 className="btn btn-sm btn-primary">
                                 🎫 輸入付款碼升級
                             </button>
+                            <Link href="/app/history" className="btn btn-sm" style={{ background: '#059669', color: '#fff', width: '100%', justifyContent: 'center' }}>
+                                📁 歷史紀錄
+                            </Link>
                             <Link href="/app/settings" className="btn btn-sm btn-ghost" style={{ width: '100%', justifyContent: 'center', color: 'var(--text-mid)', border: '1px solid var(--border)' }}>
                                 ⚙️ 個人設置
                             </Link>
@@ -190,7 +192,6 @@ export default function Navbar({ userEmail }: NavbarProps) {
                         <h3 style={{ marginBottom: '8px' }}>🔑 设置 AI算法实验室 API Key</h3>
                         <p style={{ color: 'var(--text-mid)', fontSize: '13px', marginBottom: '20px' }}>
                             API Key 首次使用后加密保存，后续无需重新输入。
-                            請前往 <a href="#" target="_blank" rel="noopener" style={{ color: 'var(--primary)' }}>AI 服務官網</a> 獲取 Key。
                         </p>
                         {msg && <div className={`alert ${msg.startsWith('✅') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
                         <form onSubmit={handleSaveApiKey}>

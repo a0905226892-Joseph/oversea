@@ -22,15 +22,15 @@ export async function POST(request: NextRequest) {
         const adminClient = createAdminClient();
         const { data: profile } = await adminClient
             .from('profiles')
-            .select('deepseek_api_key')
+            .select('ai_lab_api_key')
             .eq('id', user.id)
             .single();
 
-        if (!profile?.deepseek_api_key) {
+        if (!profile?.ai_lab_api_key) {
             return NextResponse.json({ error: 'MISSING_API_KEY', message: '請先在設置中配置 API Key' }, { status: 403 });
         }
 
-        const apiKey = decryptApiKey(profile.deepseek_api_key);
+        const apiKey = decryptApiKey(profile.ai_lab_api_key);
 
         // 2. 根據類型準備不同的提示詞模板 (遷移自 index.html)
         let systemPrompt = "你是一位資深企業投資評估專家與國際市場分析師，擁有 10 年以上經驗。";
@@ -62,8 +62,9 @@ export async function POST(request: NextRequest) {
             `;
         }
 
-        // 3. 調用 AI
-        const response = await callAiLabAPI(apiKey, userPrompt, systemPrompt);
+        // 3. 調用 AI (支持傳入配置)
+        const aiConfig = body.aiConfig || { model: 'ai-lab-chat', temperature: 0.7, maxTokens: 4000 };
+        const response = await callAiLabAPI(apiKey, userPrompt, systemPrompt, aiConfig);
 
         return NextResponse.json({ content: response });
     } catch (error: any) {
