@@ -505,7 +505,7 @@ export const metrics: Metric[] = [
     },
     {
         id: "vendor_management", name: "供应商管理", category: "operations", weight: 0.29,
-        description: "供应商管理的能力 and 水平", minValue: 0, maxValue: 10, unit: "分",
+        description: "供应商管理的能力与水平", minValue: 0, maxValue: 10, unit: "分",
         formula: "score = value × 12", formulaType: "加权线性"
     },
     {

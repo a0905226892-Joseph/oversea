@@ -309,7 +309,7 @@ function EvaluateContent() {
         }, 100);
 
         handleCalculate();
-        setSuccess(`成功载入示例数据：${demo.companyName}`);
+        setSuccess(`成功載入示例數據：${demo.companyName}`);
     }
 
     async function handleCalculate() {
@@ -325,7 +325,7 @@ function EvaluateContent() {
             setShowComprehensiveModal(true);
             return data;
         } catch (err: any) {
-            setError('计算分数失败: ' + err.message);
+            setError('計算分數失敗: ' + err.message);
         }
     }
 
@@ -337,7 +337,7 @@ function EvaluateContent() {
             labels,
             datasets: [
                 {
-                    label: '维度得分',
+                    label: '維度得分',
                     data,
                     backgroundColor: 'rgba(37, 99, 235, 0.2)',
                     borderColor: 'rgba(37, 99, 235, 1)',
@@ -392,7 +392,7 @@ function EvaluateContent() {
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error)
-            setSuccess('✅ 评估报告已成功保存')
+            setSuccess('✅ 評估報告已成功保存')
             if (!editId) router.push(`/app/evaluate?id=${data.id}`)
         } catch (err: any) {
             setError(err.message)
@@ -404,18 +404,6 @@ function EvaluateContent() {
     async function handleAiAnalyze() {
         setError(''); setAiLoading(true)
         try {
-            // 1. 数据校验：检查是否有有效的评分结果
-            if (!assessmentResult || !assessmentResult.finalResult || assessmentResult.finalResult.finalScore === 0) {
-                throw new Error('请先输入数据或载入示例以供 AI 分析');
-            }
-
-            // 2. 自动测试连接：检查 API Key 是否有效
-            const verifyRes = await fetch('/api/ai-lab/verify');
-            const verifyData = await verifyRes.json();
-            if (!verifyRes.ok || !verifyData.verified) {
-                throw new Error('请完成AI连接');
-            }
-
             const res = await fetch('/api/assessment/ai-analysis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -431,10 +419,10 @@ function EvaluateContent() {
                 })
             })
             const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'AI 分析失败')
+            if (!res.ok) throw new Error(data.error)
             setAiResult({ content: data.content })
             setSuccess('✅ AI 深度分析完成')
-            // 自动跳转到显示结果的区域
+            // 自動跳轉到顯示結果的區域
             const aiReportEl = document.getElementById('ai-report-section');
             if (aiReportEl) aiReportEl.scrollIntoView({ behavior: 'smooth' });
         } catch (err: any) {
@@ -492,114 +480,114 @@ function EvaluateContent() {
             if (!element) return
             const opt = {
                 margin: 10,
-                filename: `${companyInfo.companyName}_评估报告.pdf`,
+                filename: `${companyInfo.companyName}_評估報告.pdf`,
                 image: { type: 'jpeg' as const, quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
             }
             await html2pdf().set(opt).from(element).save()
         } catch (err: any) {
-            setError('PDF 导出失败：' + err.message)
+            setError('PDF 導出失敗：' + err.message)
         } finally {
             setExportLoading(false)
         }
     }
 
-    const [activeTab, setActiveTab] = useState<'指标' | '结果' | '分析' | '报告'>('指标')
+    const [activeTab, setActiveTab] = useState<'指標' | '結果' | '分析' | '報告'>('指標')
 
-    if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}><span className="spinner spinner-dark" /> 加载数据中...</div>
+    if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}><span className="spinner spinner-dark" /> 加載數據中...</div>
 
     const integrationButtons = [
-        { label: '导入税务信息', color: '#dc2626', icon: '📋' },
-        { label: '连接全球专利数据中心', color: '#2563eb', icon: '🔬' },
-        { label: '对接投资机构评分系统', color: '#10b981', icon: '🏛️' },
-        { label: '对接海外市场评估系统', color: '#9333ea', icon: '🌐' },
+        { label: '導入稅務信息', color: '#dc2626', icon: '📋' },
+        { label: '連接全球專利數據中心', color: '#2563eb', icon: '🔬' },
+        { label: '對接投資機構評分系統', color: '#10b981', icon: '🏛️' },
+        { label: '對接海外市場評估系統', color: '#9333ea', icon: '🌐' },
     ];
 
     const actionButtons = [
-        { label: '企业深度信息', color: '#f59e0b', onClick: () => setShowDeepInfo(!showDeepInfo) },
-        { label: '计算综合评分', color: '#3b82f6', onClick: handleCalculate },
-        { label: '保存数据', color: '#94a3b8', onClick: handleSave, disabled: saveLoading || isReadOnly },
-        { label: '加载数据', color: '#94a3b8', onClick: () => { } },
-        { label: '载入示例数据', color: '#94a3b8', onClick: () => setActiveDemoModal(true) },
+        { label: '企業深度信息', color: '#f59e0b', onClick: () => setShowDeepInfo(!showDeepInfo) },
+        { label: '計算綜合評分', color: '#3b82f6', onClick: handleCalculate },
+        { label: '保存數據', color: '#94a3b8', onClick: handleSave, disabled: saveLoading || isReadOnly },
+        { label: '加載數據', color: '#94a3b8', onClick: () => { } },
+        { label: '載入示例數據', color: '#94a3b8', onClick: () => setActiveDemoModal(true) },
         { label: 'AI深度分析', color: '#a855f7', onClick: handleAiAnalyze, loading: aiLoading },
-        { label: 'AI 设置', color: '#94a3b8', onClick: () => setShowAiSettings(!showAiSettings) },
+        { label: 'AI 設置', color: '#94a3b8', onClick: () => setShowAiSettings(!showAiSettings) },
     ];
 
     return (
         <div className="container">
             <header>
-                <h1>企业出海与投资评估分析系统</h1>
-                <p className="subtitle">108项指标动态评估 | AI向量数据算法分析 | 权重总和100.0% | 计分制评估</p>
+                <h1>企業出海與投資評估分析系統</h1>
+                <p className="subtitle">108項指標動態評估 | AI向量數據算法分析 | 權重總和100.0% | 計分制評估</p>
             </header>
 
             <div className="control-panel">
                 <div className="company-info">
                     <div className="input-group">
-                        <label htmlFor="companyName">企业名称</label>
-                        <input type="text" id="companyName" value={companyInfo.companyName} onChange={e => setCompanyInfo(p => ({ ...p, companyName: e.target.value }))} placeholder="输入被评估企业名称" />
+                        <label htmlFor="companyName">企業名稱</label>
+                        <input type="text" id="companyName" value={companyInfo.companyName} onChange={e => setCompanyInfo(p => ({ ...p, companyName: e.target.value }))} placeholder="輸入被評估企業名稱" />
                         <div className="tool-buttons-container" style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                             <button type="button" className={`tool-btn tax-btn ${activeToolPanel === 'tax' ? 'active-tool' : ''}`} id="taxToolBtn" onClick={() => setActiveToolPanel(p => p === 'tax' ? null : 'tax')}>
-                                <span className="tool-icon">📋</span> 导入税务信息
+                                <span className="tool-icon">📋</span> 導入稅務信息
                             </button>
                             <button type="button" className={`tool-btn patent-btn ${activeToolPanel === 'patent' ? 'active-tool' : ''}`} id="patentToolBtn" onClick={() => setActiveToolPanel(p => p === 'patent' ? null : 'patent')}>
-                                <span className="tool-icon">🔬</span> 连接全球专利数据中心
+                                <span className="tool-icon">🔬</span> 連接全球專利數據中心
                             </button>
                             <button type="button" className={`tool-btn invest-btn ${activeToolPanel === 'invest' ? 'active-tool' : ''}`} id="investToolBtn" onClick={() => setActiveToolPanel(p => p === 'invest' ? null : 'invest')}>
-                                <span className="tool-icon">🏦</span> 对接投资机构评分系统
+                                <span className="tool-icon">🏦</span> 對接投資機構評分系統
                             </button>
                             <button type="button" className={`tool-btn oversea-btn ${activeToolPanel === 'oversea' ? 'active-tool' : ''}`} id="overseaMarketBtn" onClick={() => setActiveToolPanel(p => p === 'oversea' ? null : 'oversea')}>
-                                <span className="tool-icon">🌐</span> 对接海外市场评估系统
+                                <span className="tool-icon">🌐</span> 對接海外市場評估系統
                             </button>
                         </div>
                     </div>
 
                     <div className="input-group">
-                        <label htmlFor="industry">所属行业</label>
+                        <label htmlFor="industry">所屬行業</label>
                         <select id="industry" value={companyInfo.industry} onChange={e => setCompanyInfo(p => ({ ...p, industry: e.target.value }))}>
-                            <option value="tech">科技/互联网</option>
-                            <option value="robot">机器人/智能硬件</option>
-                            <option value="healthcare">医疗健康</option>
-                            <option value="finance">金融服务</option>
-                            <option value="manufacturing">制造业</option>
-                            <option value="consumer">消费零售</option>
-                            <option value="energy">能源环保</option>
+                            <option value="tech">科技/互聯網</option>
+                            <option value="robot">機器人/智能硬件</option>
+                            <option value="healthcare">醫療健康</option>
+                            <option value="finance">金融服務</option>
+                            <option value="manufacturing">製造業</option>
+                            <option value="consumer">消費零售</option>
+                            <option value="energy">能源環保</option>
                             <option value="other">其他</option>
                         </select>
                     </div>
 
                     <div className="input-group">
-                        <label htmlFor="fundingStage">适合融资阶段</label>
+                        <label htmlFor="fundingStage">適合融資階段</label>
                         <select id="fundingStage" value={companyInfo.fundingStage} onChange={e => setCompanyInfo(p => ({ ...p, fundingStage: e.target.value }))}>
-                            <option value="seed">种子期 (Seed)</option>
-                            <option value="angel">天使轮 (Angel)</option>
-                            <option value="pre-a">Pre-A轮</option>
-                            <option value="a">A轮</option>
-                            <option value="a-plus">A+轮</option>
-                            <option value="pre-b">Pre-B轮</option>
-                            <option value="b">B轮</option>
-                            <option value="b-plus">B+轮</option>
-                            <option value="pre-c">Pre-C轮</option>
-                            <option value="c">C轮</option>
-                            <option value="c-plus">C+轮</option>
-                            <option value="ipo">IPO准备期</option>
+                            <option value="seed">種子期 (Seed)</option>
+                            <option value="angel">天使輪 (Angel)</option>
+                            <option value="pre-a">Pre-A輪</option>
+                            <option value="a">A輪</option>
+                            <option value="a-plus">A+輪</option>
+                            <option value="pre-b">Pre-B輪</option>
+                            <option value="b">B輪</option>
+                            <option value="b-plus">B+輪</option>
+                            <option value="pre-c">Pre-C輪</option>
+                            <option value="c">C輪</option>
+                            <option value="c-plus">C+輪</option>
+                            <option value="ipo">IPO準備期</option>
                         </select>
                     </div>
 
                     <div className="input-group">
-                        <label htmlFor="evaluationDate">评估日期</label>
+                        <label htmlFor="evaluationDate">評估日期</label>
                         <input type="date" id="evaluationDate" value={companyInfo.evaluationDate} onChange={e => setCompanyInfo(p => ({ ...p, evaluationDate: e.target.value }))} />
                     </div>
                 </div>
 
                 <div>
-                    <button id="deepInfoBtn" className="deep-info" onClick={() => setShowDeepInfo(!showDeepInfo)}>企业深度信息</button>
-                    <button id="calculateBtn" onClick={handleCalculate} disabled={aiLoading || saveLoading}>计算综合评分</button>
-                    <button id="saveDataBtn" className="secondary" onClick={handleSave} disabled={isReadOnly || saveLoading}>保存数据</button>
-                    <button id="loadDataBtn" className="secondary">加载数据</button>
-                    <button id="demoBtn" className="secondary" onClick={() => setActiveDemoModal(true)}>载入示例数据</button>
-                    <button id="aiBtn" className="ai" onClick={handleAiAnalyze} disabled={aiLoading}>{aiLoading ? '处理中...' : 'AI深度分析'}</button>
-                    <button id="apiKeyToggleBtn" className="secondary" onClick={() => setShowAiSettings(!showAiSettings)}>AI 设置</button>
+                    <button id="deepInfoBtn" className="deep-info" onClick={() => setShowDeepInfo(!showDeepInfo)}>企業深度信息</button>
+                    <button id="calculateBtn" onClick={handleCalculate} disabled={aiLoading || saveLoading}>計算綜合評分</button>
+                    <button id="saveDataBtn" className="secondary" onClick={handleSave} disabled={isReadOnly || saveLoading}>保存數據</button>
+                    <button id="loadDataBtn" className="secondary">加載數據</button>
+                    <button id="demoBtn" className="secondary" onClick={() => loadEvaluation('demo-sample')}>載入示例數據</button>
+                    <button id="aiBtn" className="ai" onClick={handleAiAnalyze} disabled={aiLoading}>{aiLoading ? '處理中...' : 'AI深度分析'}</button>
+                    <button id="apiKeyToggleBtn" className="secondary" onClick={() => setShowAiSettings(!showAiSettings)}>AI 設置</button>
                 </div>
             </div>
 
@@ -962,18 +950,18 @@ function EvaluateContent() {
                         </div>
                     </div>
                     <div className="modal-footer">
-                        <button onClick={() => { setShowComprehensiveModal(false); setActiveTab('结果'); }}>查看详细结果</button>
+                        <button onClick={() => { setShowComprehensiveModal(false); setActiveTab('結果'); }}>查看详细结果</button>
                         <button id="modalAiBtn" onClick={() => { setShowComprehensiveModal(false); handleAiAnalyze(); }}>AI深度分析</button>
                         <button className="secondary" onClick={() => setShowComprehensiveModal(false)}>关闭</button>
                     </div>
                 </div>
             </div>
-            {/* 3. 底部 4 标签切换系统 */}
+            {/* 3. 底部 4 標籤切換系統 */}
             <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: '32px', background: '#fff', borderRadius: '12px 12px 0 0', overflow: 'hidden' }}>
-                {['指标', '结果', '分析', '报告'].map(tab => (
+                {['指標', '結果', '分析', '報告'].map(tab => (
                     <button
                         key={tab}
-                        onClick={() => setActiveTab(tab as '指标' | '结果' | '分析' | '报告')}
+                        onClick={() => setActiveTab(tab as any)}
                         style={{
                             padding: '16px 32px',
                             fontSize: '16px',
@@ -987,35 +975,35 @@ function EvaluateContent() {
                             flex: 1
                         }}
                     >
-                        {tab === '指标' ? '评估指标 (108项)' : tab === '结果' ? '综合结果' : tab === '分析' ? '深度分析' : '评估报告'}
+                        {tab === '指標' ? '評估指標 (108項)' : tab === '結果' ? '綜合結果' : tab === '分析' ? '深度分析' : '評估報告'}
                     </button>
                 ))}
             </div>
 
-            {/* 4. 标签内容 */}
+            {/* 4. 標籤內容 */}
             <div style={{ minHeight: '600px' }}>
-                {activeTab === '指标' && (
+                {activeTab === '指標' && (
                     <div style={{ animation: 'fadeIn 0.3s ease' }}>
                         <div style={{ padding: '0 16px 24px 16px' }}>
-                            <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>企业出海与投资评估指标 (7大区块，共108项)</h2>
-                            <p style={{ color: '#64748b', fontSize: '14px', marginTop: '8px' }}>请点击下方区块按钮展开对应指标，为每个指标输入数值，评分和权重可以手动调整，评分×权重=计分</p>
+                            <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>企業出海與投資評估指標 (7大區塊，共108項)</h2>
+                            <p style={{ color: '#64748b', fontSize: '14px', marginTop: '8px' }}>請點擊下方區塊按鈕展開對應指標，為每個指標輸入數值，評分和權重可以手動調整，評分×權重=計分</p>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px', fontWeight: 700, color: '#1e40af' }}>
-                            权重总和：<span style={{ color: 'var(--primary)', fontSize: '18px' }}>100.0</span>%
+                            權重總和：<span style={{ color: 'var(--primary)', fontSize: '18px' }}>100.0</span>%
                         </div>
 
-                        {/* 7 大维度入口卡片 (对齐截图颜色与布局) */}
+                        {/* 7 大維度入口卡片 (對齊截圖顏色與佈局) */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px', marginBottom: '40px' }}>
                             {categoriesConfig.map((cat, idx) => {
                                 const colors = [
-                                    { bg: '#3b82f6', icon: '👥' }, // 团队 - 蓝
-                                    { bg: '#10b981', icon: '🚀' }, // 产品 - 绿
-                                    { bg: '#ef4444', icon: '📊' }, // 市场 - 红
-                                    { bg: '#f59e0b', icon: '💰' }, // 财务 - 橙
-                                    { bg: '#a855f7', icon: '⚙️' }, // 运营 - 紫
-                                    { bg: '#334155', icon: '🎯' }, // 战略 - 深蓝
-                                    { bg: '#2dd4bf', icon: '🌱' }, // 持续 - 浅绿
+                                    { bg: '#3b82f6', icon: '👥' }, // 團隊 - 藍
+                                    { bg: '#10b981', icon: '🚀' }, // 產品 - 綠
+                                    { bg: '#ef4444', icon: '📊' }, // 市場 - 紅
+                                    { bg: '#f59e0b', icon: '💰' }, // 財務 - 橙
+                                    { bg: '#a855f7', icon: '⚙️' }, // 運營 - 紫
+                                    { bg: '#334155', icon: '🎯' }, // 戰略 - 深藍
+                                    { bg: '#2dd4bf', icon: '🌱' }, // 持續 - 淺綠
                                 ];
                                 const cfg = colors[idx] || colors[0];
                                 return (
@@ -1036,23 +1024,23 @@ function EvaluateContent() {
                                             cursor: 'pointer',
                                             transition: 'transform 0.2s',
                                             textAlign: 'center',
-                                            gridColumn: idx >= 5 ? 'span 1' : 'auto', // 处理最后两个居中
+                                            gridColumn: idx >= 5 ? 'span 1' : 'auto', // 處理最後兩個居中
                                             transform: activeCategory === cat.id ? 'scale(1.05)' : 'scale(1)'
                                         }}
                                     >
                                         <span style={{ fontSize: '32px' }}>{cfg.icon}</span>
                                         <div style={{ fontWeight: 800, fontSize: '16px' }}>{cat.name}</div>
-                                        <div style={{ fontSize: '12px', opacity: 0.9 }}>{metrics.filter(m => m.category === cat.id).length}项指标 | {activeCategory === cat.id ? '20' : '15'}%权重</div>
+                                        <div style={{ fontSize: '12px', opacity: 0.9 }}>{metrics.filter(m => m.category === cat.id).length}項指標 | {activeCategory === cat.id ? '20' : '15'}%權重</div>
                                     </button>
                                 );
                             }).slice(0, 5)}
                         </div>
-                        {/* 最后两个卡片居中显示 */}
+                        {/* 最後兩個卡片居中顯示 */}
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '40px' }}>
                             {categoriesConfig.slice(5).map((cat, idx) => {
                                 const colors = [
-                                    { bg: '#334155', icon: '🎯' }, // 战略 - 深蓝
-                                    { bg: '#2dd4bf', icon: '🌱' }, // 持续 - 浅绿
+                                    { bg: '#334155', icon: '🎯' }, // 戰略 - 深藍
+                                    { bg: '#2dd4bf', icon: '🌱' }, // 持續 - 淺綠
                                 ];
                                 const cfg = colors[idx];
                                 return (
@@ -1078,26 +1066,26 @@ function EvaluateContent() {
                                     >
                                         <span style={{ fontSize: '32px' }}>{cfg.icon}</span>
                                         <div style={{ fontWeight: 800, fontSize: '16px' }}>{cat.name}</div>
-                                        <div style={{ fontSize: '12px', opacity: 0.9 }}>{metrics.filter(m => m.category === cat.id).length}项指标 | 10%权重</div>
+                                        <div style={{ fontSize: '12px', opacity: 0.9 }}>{metrics.filter(m => m.category === cat.id).length}項指標 | 10%權重</div>
                                     </button>
                                 );
                             })}
                         </div>
 
-                        {/* 指标表格展示区 */}
+                        {/* 指標表格展示區 */}
                         <div className="card" style={{ padding: '32px', border: '1px solid #e2e8f0' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', paddingBottom: '16px', borderBottom: '2px solid #f1f5f9' }}>
                                 <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📊</div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{categoriesConfig.find(c => c.id === activeCategory)?.name} - 详细指标</h2>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{categoriesConfig.find(c => c.id === activeCategory)?.name} - 詳細指標</h2>
                             </div>
 
                             <div className="metrics-table-container">
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <thead style={{ background: '#f8fafc' }}>
                                         <tr>
-                                            <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', color: '#475569' }}>评估指标</th>
-                                            <th style={{ padding: '16px', textAlign: 'center', width: '220px', fontSize: '13px', color: '#475569' }}>当前数值</th>
-                                            <th style={{ padding: '16px', textAlign: 'center', width: '100px', fontSize: '13px', color: '#475569' }}>权重(%)</th>
+                                            <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', color: '#475569' }}>評估指標</th>
+                                            <th style={{ padding: '16px', textAlign: 'center', width: '220px', fontSize: '13px', color: '#475569' }}>當前數值</th>
+                                            <th style={{ padding: '16px', textAlign: 'center', width: '100px', fontSize: '13px', color: '#475569' }}>權重(%)</th>
                                             <th style={{ padding: '16px', textAlign: 'center', width: '100px', fontSize: '13px', color: '#475569' }}>原始得分</th>
                                         </tr>
                                     </thead>
@@ -1147,31 +1135,31 @@ function EvaluateContent() {
                         </div>
 
                         <div style={{ textAlign: 'center', marginTop: '40px', color: '#94a3b8', fontSize: '14px' }}>
-                            @2026 AI先进技术实验室 | 128维度向量数据库+AI算法分析
+                            @2026 AI先進技術實驗室 | 128維度向量數據庫+AI算法分析
                         </div>
                     </div>
                 )}
 
-                {activeTab === '结果' && (
+                {activeTab === '結果' && (
                     <div style={{ animation: 'fadeIn 0.3s ease', display: 'grid', gridTemplateColumns: '380px 1fr', gap: '24px' }}>
                         <div style={{ position: 'sticky', top: '24px' }}>
                             <div className="card" style={{
                                 textAlign: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', color: '#fff', marginBottom: '24px', padding: '60px 24px', borderRadius: '24px', border: 'none'
                             }}>
-                                <div style={{ fontSize: '16px', opacity: 0.8, letterSpacing: '2px' }}>企业综合投资评分</div>
+                                <div style={{ fontSize: '16px', opacity: 0.8, letterSpacing: '2px' }}>企業綜合投資評分</div>
                                 <div style={{ fontSize: '7rem', fontWeight: 900, margin: '20px 0', textShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
                                     {assessmentResult?.totalScore || 0}
                                 </div>
                                 <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.2)', padding: '12px 32px', borderRadius: '30px', fontWeight: 700, fontSize: '20px' }}>
-                                    评级：{assessmentResult?.grade || '待计算'}
+                                    評級：{assessmentResult?.grade || '待計算'}
                                 </div>
                             </div>
                             <button onClick={handleExportPdf} className="btn btn-lg" style={{ background: '#10b981', color: '#fff', border: 'none', width: '100%' }} disabled={exportLoading}>
-                                {exportLoading ? <span className="spinner" /> : '📄 导出 PDF 专业报告'}
+                                {exportLoading ? <span className="spinner" /> : '📄 導出 PDF 專業報告'}
                             </button>
                         </div>
                         <div className="card" style={{ padding: '32px', borderRadius: '20px' }}>
-                            <h4 style={{ marginBottom: '32px', fontSize: '1.5rem', fontWeight: 800, borderLeft: '6px solid var(--primary)', paddingLeft: '16px' }}>竞争力维度分布</h4>
+                            <h4 style={{ marginBottom: '32px', fontSize: '1.5rem', fontWeight: 800, borderLeft: '6px solid var(--primary)', paddingLeft: '16px' }}>競爭力維度分布</h4>
                             <div style={{ height: '500px' }}>
                                 <Radar data={radarData} options={radarOptions} />
                             </div>
@@ -1185,15 +1173,15 @@ function EvaluateContent() {
                             <div style={{ textAlign: 'center', padding: '100px', background: '#fff', borderRadius: '12px', border: '2px dashed #e2e8f0' }}>
                                 <div style={{ fontSize: '48px', marginBottom: '20px' }}>🤖</div>
                                 <h3>尚未生成 AI 深度分析</h3>
-                                <p style={{ color: '#64748b', marginBottom: '24px' }}>点击顶部的「AI深度分析」按钮，由 AI算法实验室 为您生成 PESTEL/4P/VRIO 专家洞察</p>
+                                <p style={{ color: '#64748b', marginBottom: '24px' }}>點擊頂部的「AI深度分析」按鈕，由 AI算法實驗室 為您生成 PESTEL/4P/VRIO 專家洞察</p>
                                 <button onClick={handleAiAnalyze} className="btn btn-primary" disabled={aiLoading}>
-                                    {aiLoading ? <span className="spinner" /> : '立即开始 AI 分析'}
+                                    {aiLoading ? <span className="spinner" /> : '立即開始 AI 分析'}
                                 </button>
                             </div>
                         ) : (
                             <div className="card" style={{ padding: '40px', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '24px' }}>
                                 <h2 style={{ color: '#7c3aed', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <span>🤖</span> AI 专家深度洞察报告
+                                    <span>🤖</span> AI 專家深度洞察報告
                                 </h2>
                                 <div style={{ whiteSpace: 'pre-wrap', lineHeight: 2, color: '#4b5563', fontSize: '16px' }}>
                                     {aiResult.content}
@@ -1203,17 +1191,17 @@ function EvaluateContent() {
                     </div>
                 )}
 
-                {activeTab === '报告' && (
+                {activeTab === '報告' && (
                     <div style={{ animation: 'fadeIn 0.3s ease', background: '#fff', padding: '40px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                            <h2 style={{ fontWeight: 800 }}>📄 预览专业评估报告</h2>
+                            <h2 style={{ fontWeight: 800 }}>📄 預覽專業評估報告</h2>
                             <button onClick={handleExportPdf} className="btn btn-primary" disabled={exportLoading}>
-                                {exportLoading ? <span className="spinner" /> : '⬇️ 下载 PDF'}
+                                {exportLoading ? <span className="spinner" /> : '⬇️ 下載 PDF'}
                             </button>
                         </div>
-                        {/* 这里可以放置报告预览组件/內容，與 PDF 模版類似 */}
+                        {/* 這裡可以放置報告預覽組件/內容，與 PDF 模版類似 */}
                         <div style={{ border: '1px solid #e2e8f0', padding: '40px', borderRadius: '8px' }}>
-                            <p style={{ textAlign: 'center', color: '#64748b' }}>报告内容生成中，请导出 PDF 查看完整版本。</p>
+                            <p style={{ textAlign: 'center', color: '#64748b' }}>報告內容生成中，請導出 PDF 查看完整版本。</p>
                         </div>
                     </div>
                 )}
@@ -1225,26 +1213,26 @@ function EvaluateContent() {
                 <div ref={reportRef} style={{ padding: '40px', color: '#1e293b', background: '#fff', fontSize: '14px', width: '210mm' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2563eb', paddingBottom: '20px', marginBottom: '30px' }}>
                         <div>
-                            <h1 style={{ fontSize: '28px', color: '#1e3a5f', margin: 0 }}>企业出海评估深度分析报告</h1>
-                            <p style={{ color: '#64748b', marginTop: '5px' }}>数据分析驱动 · AI 算法实验室赋能</p>
+                            <h1 style={{ fontSize: '28px', color: '#1e3a5f', margin: 0 }}>企業出海評估深度分析報告</h1>
+                            <p style={{ color: '#64748b', marginTop: '5px' }}>數據分析驅動 · AI 算法实验室賦能</p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '42px', fontWeight: 900, color: '#2563eb' }}>{assessmentResult?.totalScore || 0}</div>
-                            <div style={{ fontSize: '12px', color: '#64748b' }}>综合评分</div>
+                            <div style={{ fontSize: '12px', color: '#64748b' }}>綜合評分</div>
                         </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '40px' }}>
                         <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '12px' }}>
-                            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '15px' }}>🏢 企业基本信息</h3>
-                            <p><strong>企业名称：</strong> {companyInfo.companyName}</p>
-                            <p><strong>所属行业：</strong> {companyInfo.industry}</p>
-                            <p><strong>发展阶段：</strong> {companyInfo.fundingStage}</p>
-                            <p><strong>数据日期：</strong> {companyInfo.evaluationDate}</p>
-                            <p><strong>评估等级：</strong> <span style={{ color: '#2563eb', fontWeight: 700 }}>{assessmentResult?.grade}</span></p>
+                            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '15px' }}>🏢 企業基本資訊</h3>
+                            <p><strong>企業名稱：</strong> {companyInfo.companyName}</p>
+                            <p><strong>所屬行業：</strong> {companyInfo.industry}</p>
+                            <p><strong>發展階段：</strong> {companyInfo.fundingStage}</p>
+                            <p><strong>數據日期：</strong> {companyInfo.evaluationDate}</p>
+                            <p><strong>評估等級：</strong> <span style={{ color: '#2563eb', fontWeight: 700 }}>{assessmentResult?.grade}</span></p>
                         </div>
                         <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '12px', textAlign: 'center' }}>
-                            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '15px', textAlign: 'left' }}>📊 竞争力维度图</h3>
+                            <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '15px', textAlign: 'left' }}>📊 競爭力維度圖</h3>
                             <div style={{ width: '240px', height: '180px', margin: '0 auto' }}>
                                 <Radar data={radarData} options={radarOptions} />
                             </div>
@@ -1252,7 +1240,7 @@ function EvaluateContent() {
                     </div>
 
                     <div style={{ marginBottom: '40px' }}>
-                        <h3 style={{ color: '#1e3a5f', borderLeft: '4px solid #2563eb', paddingLeft: '15px', marginBottom: '20px' }}>📋 维度详细评分</h3>
+                        <h3 style={{ color: '#1e3a5f', borderLeft: '4px solid #2563eb', paddingLeft: '15px', marginBottom: '20px' }}>📋 維度詳細評分</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
                             {categoriesConfig.map(cat => (
                                 <div key={cat.id} style={{ border: '1px solid #e2e8f0', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
@@ -1265,9 +1253,9 @@ function EvaluateContent() {
 
                     {aiResult && (
                         <div>
-                            <h3 style={{ color: '#1e3a5f', borderLeft: '4px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px' }}>🤖 AI 算法实验室 专家深度洞察</h3>
+                            <h3 style={{ color: '#1e3a5f', borderLeft: '4px solid #7c3aed', paddingLeft: '15px', marginBottom: '20px' }}>🤖 AI 算法实验室 專家深度洞察</h3>
                             <div style={{ padding: '25px', background: '#fff', border: '1px solid #ddd6fe', borderRadius: '12px' }}>
-                                <h4 style={{ color: '#7c3aed', margin: '0 0 12px 0' }}>深度分析与执行指引</h4>
+                                <h4 style={{ color: '#7c3aed', margin: '0 0 12px 0' }}>深度分析與執行指引</h4>
                                 <p style={{ lineHeight: 1.8, margin: 0, whiteSpace: 'pre-wrap' }}>{aiResult.content}</p>
                             </div>
                         </div>
@@ -1399,7 +1387,7 @@ function EvaluateContent() {
 
 export default function EvaluatePage() {
     return (
-        <Suspense fallback={<div style={{ textAlign: 'center', padding: '100px' }}><span className="spinner spinner-dark" /> 加载中...</div>}>
+        <Suspense fallback={<div style={{ textAlign: 'center', padding: '100px' }}><span className="spinner spinner-dark" /> 加載中...</div>}>
             <div className="container" style={{ paddingTop: '100px', paddingBottom: '60px' }}>
                 <EvaluateContent />
             </div>
