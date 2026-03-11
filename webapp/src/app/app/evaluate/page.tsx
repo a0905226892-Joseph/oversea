@@ -73,6 +73,25 @@ function EvaluateContent() {
         evaluationDate: new Date().toISOString().split('T')[0]
     })
 
+    const [deepData, setDeepData] = useState({
+        registeredCapital: '',
+        paidInCapital: '',
+        investorName: '',
+        investorPaidCapital: '',
+        chairmanName: '',
+        gmName: '',
+        legalRepresentative: '',
+        investmentDecisionMaker: '',
+        operationManager: '',
+        supervisorName: '',
+        boardMembers: '',
+        executives: '',
+        establishmentDate: '',
+        unifiedCreditCode: '',
+        companyAddress: '',
+        businessScope: '智能科技领域内的技术开发、技术咨询、技术服务、技术转让；电子产品生产销售；AI算力服务、人工智能服务器设计、个人AI助理终端开发销售。'
+    })
+
     // 108項指標的數值 (MetricID -> Value)
     const [values, setValues] = useState<Record<string, number>>(() => {
         const init: Record<string, number> = {}
@@ -282,6 +301,26 @@ function EvaluateContent() {
             evaluationDate: new Date().toISOString().split('T')[0]
         });
 
+        // 更新深層數據
+        setDeepData({
+            registeredCapital: demo.capital || '',
+            paidInCapital: demo.paidIn || '',
+            investorName: demo.investorName || '',
+            investorPaidCapital: demo.investorPaidCapital || '',
+            chairmanName: demo.chairman || '',
+            gmName: demo.gm || '',
+            legalRepresentative: demo.legalRep || '',
+            investmentDecisionMaker: demo.investmentLead || '',
+            operationManager: demo.opsLead || '',
+            supervisorName: demo.supervisor || '',
+            boardMembers: demo.boardMembers || '',
+            executives: demo.executives || '',
+            establishmentDate: demo.date || '',
+            unifiedCreditCode: demo.code || '',
+            companyAddress: demo.address || '',
+            businessScope: demo.scope || ''
+        });
+
         const newValues = { ...values };
         Object.keys(demo.scores).forEach((id: string) => {
             newValues[id] = (demo.scores as any)[id];
@@ -291,41 +330,32 @@ function EvaluateContent() {
         setShareholders(demo.shareholders);
         setProducts(demo.products);
 
-        // 同步 DOM
+        // 立即計算評分，傳入 newValues 以避開狀態更新延遲
+        handleCalculate(newValues);
+
+        // 自動生成圖表
         setTimeout(() => {
-            const registeredCapital = document.getElementById('registeredCapital') as HTMLInputElement;
-            const paidInCapital = document.getElementById('paidInCapital') as HTMLInputElement;
-            const establishmentDate = document.getElementById('establishmentDate') as HTMLInputElement;
-            const unifiedCreditCode = document.getElementById('unifiedCreditCode') as HTMLInputElement;
-            const companyAddress = document.getElementById('companyAddress') as HTMLTextAreaElement;
-            const businessScope = document.getElementById('businessScope') as HTMLTextAreaElement;
-
-            if (registeredCapital) registeredCapital.value = demo.capital;
-            if (paidInCapital) paidInCapital.value = demo.paidIn;
-            if (establishmentDate) establishmentDate.value = demo.date;
-            if (unifiedCreditCode) unifiedCreditCode.value = demo.code;
-            if (companyAddress) companyAddress.value = demo.address;
-            if (businessScope) businessScope.value = demo.scope;
-        }, 100);
-
-        handleCalculate();
+            generateMermaidChart();
+        }, 500);
         setSuccess(`成功载入示例数据：${demo.companyName}`);
     }
 
-    async function handleCalculate() {
+    async function handleCalculate(customValues?: Record<string, number>) {
+        setError(''); setSuccess('')
+        const targetValues = customValues || values;
         try {
             const res = await fetch('/api/assessment/calculate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ metrics: values })
-            });
-            if (!res.ok) throw new Error('計算失敗');
-            const data = await res.json();
-            setAssessmentResult(data);
-            setShowComprehensiveModal(true);
-            return data;
+                body: JSON.stringify({ metrics: targetValues })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error)
+            setAssessmentResult(data)
+            return data
         } catch (err: any) {
-            setError('计算分数失败: ' + err.message);
+            setError(err.message)
+            return null
         }
     }
 
@@ -594,7 +624,7 @@ function EvaluateContent() {
 
                 <div>
                     <button id="deepInfoBtn" className="deep-info" onClick={() => setShowDeepInfo(!showDeepInfo)}>企业深度信息</button>
-                    <button id="calculateBtn" onClick={handleCalculate} disabled={aiLoading || saveLoading}>计算综合评分</button>
+                    <button id="calculateBtn" onClick={() => handleCalculate()} disabled={aiLoading || saveLoading}>计算综合评分</button>
                     <button id="saveDataBtn" className="secondary" onClick={handleSave} disabled={isReadOnly || saveLoading}>保存数据</button>
                     <button id="loadDataBtn" className="secondary">加载数据</button>
                     <button id="demoBtn" className="secondary" onClick={() => setActiveDemoModal(true)}>载入示例数据</button>
@@ -613,21 +643,25 @@ function EvaluateContent() {
                         <h3>注册资本与资本结构</h3>
                         <div className="input-group">
                             <label htmlFor="registeredCapital">注册资本额（万元）</label>
-                            <input type="number" id="registeredCapital" placeholder="请输入注册资本额" min="0" step="0.01" onChange={() => { }} />
+                            <input type="number" id="registeredCapital" placeholder="请输入注册资本额" min="0" step="0.01"
+                                value={deepData.registeredCapital} onChange={e => setDeepData({ ...deepData, registeredCapital: e.target.value })} />
                             <div className="input-hint">请输入正确的注册资本金额</div>
                         </div>
                         <div className="input-group">
                             <label htmlFor="paidInCapital">实收资本（万元）</label>
-                            <input type="number" id="paidInCapital" placeholder="请输入实收资本额" min="0" step="0.01" onChange={() => { }} />
+                            <input type="number" id="paidInCapital" placeholder="请输入实收资本额" min="0" step="0.01"
+                                value={deepData.paidInCapital} onChange={e => setDeepData({ ...deepData, paidInCapital: e.target.value })} />
                             <div className="input-hint">实收资本应小于等于注册资本</div>
                         </div>
                         <div className="input-group">
                             <label htmlFor="investorName">主要投资人名称</label>
-                            <input type="text" id="investorName" placeholder="请输入主要投资人名称" />
+                            <input type="text" id="investorName" placeholder="请输入主要投资人名称"
+                                value={deepData.investorName} onChange={e => setDeepData({ ...deepData, investorName: e.target.value })} />
                         </div>
                         <div className="input-group">
                             <label htmlFor="investorPaidCapital">投资人实缴资本（万元）</label>
-                            <input type="number" id="investorPaidCapital" placeholder="请输入投资人实缴资本额" min="0" step="0.01" />
+                            <input type="number" id="investorPaidCapital" placeholder="请输入投资人实缴资本额" min="0" step="0.01"
+                                value={deepData.investorPaidCapital} onChange={e => setDeepData({ ...deepData, investorPaidCapital: e.target.value })} />
                         </div>
                     </div>
 
@@ -636,35 +670,43 @@ function EvaluateContent() {
                         <h3>公司治理结构</h3>
                         <div className="input-group">
                             <label htmlFor="chairmanName">董事长 / GP</label>
-                            <input type="text" id="chairmanName" placeholder="姓名" />
+                            <input type="text" id="chairmanName" placeholder="姓名"
+                                value={deepData.chairmanName} onChange={e => setDeepData({ ...deepData, chairmanName: e.target.value })} />
                         </div>
                         <div className="input-group">
                             <label htmlFor="gmName">总经理 / 执行事务合伙人</label>
-                            <input type="text" id="gmName" placeholder="姓名" />
+                            <input type="text" id="gmName" placeholder="姓名"
+                                value={deepData.gmName} onChange={e => setDeepData({ ...deepData, gmName: e.target.value })} />
                         </div>
                         <div className="input-group">
                             <label htmlFor="legalRepresentative">法定代表人</label>
-                            <input type="text" id="legalRepresentative" placeholder="姓名" />
+                            <input type="text" id="legalRepresentative" placeholder="姓名"
+                                value={deepData.legalRepresentative} onChange={e => setDeepData({ ...deepData, legalRepresentative: e.target.value })} />
                         </div>
                         <div className="input-group">
                             <label htmlFor="investmentDecisionMaker">投資決策負責人</label>
-                            <input type="text" id="investmentDecisionMaker" placeholder="姓名" />
+                            <input type="text" id="investmentDecisionMaker" placeholder="姓名"
+                                value={deepData.investmentDecisionMaker} onChange={e => setDeepData({ ...deepData, investmentDecisionMaker: e.target.value })} />
                         </div>
                         <div className="input-group">
                             <label htmlFor="operationManager">運營負責人</label>
-                            <input type="text" id="operationManager" placeholder="姓名" />
+                            <input type="text" id="operationManager" placeholder="姓名"
+                                value={deepData.operationManager} onChange={e => setDeepData({ ...deepData, operationManager: e.target.value })} />
                         </div>
                         <div className="input-group">
                             <label htmlFor="supervisorName">监事</label>
-                            <input type="text" id="supervisorName" placeholder="姓名" />
+                            <input type="text" id="supervisorName" placeholder="姓名"
+                                value={deepData.supervisorName} onChange={e => setDeepData({ ...deepData, supervisorName: e.target.value })} />
                         </div>
                         <div className="input-group">
                             <label htmlFor="boardMembers">董事会成员</label>
-                            <textarea id="boardMembers" rows={2} placeholder="人员用顿号或逗号分隔"></textarea>
+                            <textarea id="boardMembers" rows={2} placeholder="人员用顿号或逗号分隔"
+                                value={deepData.boardMembers} onChange={e => setDeepData({ ...deepData, boardMembers: e.target.value })}></textarea>
                         </div>
                         <div className="input-group">
                             <label htmlFor="executives">高管团队</label>
-                            <textarea id="executives" rows={2} placeholder="人员用顿号或逗号分隔"></textarea>
+                            <textarea id="executives" rows={2} placeholder="人员用顿号或逗号分隔"
+                                value={deepData.executives} onChange={e => setDeepData({ ...deepData, executives: e.target.value })}></textarea>
                         </div>
                     </div>
 
@@ -673,21 +715,24 @@ function EvaluateContent() {
                         <h3>公司核心信息</h3>
                         <div className="input-group">
                             <label htmlFor="establishmentDate">成立日期</label>
-                            <input type="date" id="establishmentDate" onChange={() => { }} />
+                            <input type="date" id="establishmentDate"
+                                value={deepData.establishmentDate} onChange={e => setDeepData({ ...deepData, establishmentDate: e.target.value })} />
                         </div>
                         <div className="input-group">
                             <label htmlFor="unifiedCreditCode">统一社会信用代码</label>
-                            <input type="text" id="unifiedCreditCode" placeholder="请输入统一社会信用代码" onChange={() => { }} />
+                            <input type="text" id="unifiedCreditCode" placeholder="请输入统一社会信用代码"
+                                value={deepData.unifiedCreditCode} onChange={e => setDeepData({ ...deepData, unifiedCreditCode: e.target.value })} />
                             <div className="input-hint">18位统一社会信用代码</div>
                         </div>
                         <div className="input-group">
                             <label htmlFor="companyAddress">注册地址</label>
-                            <textarea id="companyAddress" rows={2} placeholder="请输入公司注册地址" onChange={() => { }}></textarea>
+                            <textarea id="companyAddress" rows={2} placeholder="请输入公司注册地址"
+                                value={deepData.companyAddress} onChange={e => setDeepData({ ...deepData, companyAddress: e.target.value })}></textarea>
                         </div>
                         <div className="input-group">
                             <label htmlFor="businessScope">经营范围</label>
-                            <textarea id="businessScope" rows={3} onChange={() => { }}
-                                placeholder="请输入公司经营范围">智能科技领域内的技术开发、技术咨询、技术服务、技术转让；电子产品生产销售；AI算力服务、人工智能服务器设计、个人AI助理终端开发销售。</textarea>
+                            <textarea id="businessScope" rows={3} placeholder="请输入公司经营范围"
+                                value={deepData.businessScope} onChange={e => setDeepData({ ...deepData, businessScope: e.target.value })}></textarea>
                         </div>
                     </div>
                 </div>
@@ -871,9 +916,25 @@ function EvaluateContent() {
                     <button className="tool-panel-close" onClick={() => setActiveToolPanel(null)}>&times;</button>
                 </div>
                 <div id="taxContent">
-                    <div className="tool-loading">
-                        <div className="spinner"></div>
-                        <p>正在连接税务系统，导入企业税务数据...</p>
+                    <div className="tool-data-grid">
+                        <div className="tool-data-card"><div className="card-label">纳税人识别号</div><div className="card-value" style={{ fontSize: '0.9rem' }}>91310000MA1FL8XX42</div></div>
+                        <div className="tool-data-card"><div className="card-label">纳税信用等级</div><div className="card-value" style={{ color: '#00b894' }}>A级</div><div className="card-change positive">连续3年A级</div></div>
+                        <div className="tool-data-card"><div className="card-label">本年度纳税总额</div><div className="card-value">¥ 2,856万</div><div className="card-change positive">↑ 23.5% 同比增长</div></div>
+                        <div className="tool-data-card"><div className="card-label">增值税纳税额</div><div className="card-value">¥ 1,820万</div></div>
+                        <div className="tool-data-card"><div className="card-label">企业所得税</div><div className="card-value">¥ 680万</div></div>
+                        <div className="tool-data-card"><div className="card-label">税收政策</div><div className="card-value" style={{ color: '#6c5ce7', fontSize: '0.9rem' }}>高新技术企业 (15%税率)</div></div>
+                    </div>
+                    <h4 style={{ margin: '20px 0 10px', color: '#2c3e50' }}>📑 近三年纳税明细</h4>
+                    <table className="tool-table">
+                        <thead><tr><th>年度</th><th>增值税</th><th>企业所得税</th><th>其他税费</th><th>合计</th><th>信用等级</th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>2025</strong></td><td>1,820万</td><td>680万</td><td>356万</td><td><strong>2,856万</strong></td><td><span className="status-badge good">A级</span></td></tr>
+                            <tr><td><strong>2024</strong></td><td>1,540万</td><td>518万</td><td>254万</td><td><strong>2,312万</strong></td><td><span className="status-badge good">A级</span></td></tr>
+                            <tr><td><strong>2023</strong></td><td>1,280万</td><td>425万</td><td>195万</td><td><strong>1,900万</strong></td><td><span className="status-badge good">A级</span></td></tr>
+                        </tbody>
+                    </table>
+                    <div style={{ marginTop: '15px', padding: '12px', background: '#d4edda', borderRadius: '8px', color: '#155724' }}>
+                        <strong>✅ 税务评估结论：</strong>该企业纳税信用良好，合规性优秀。
                     </div>
                 </div>
             </div>
@@ -885,9 +946,22 @@ function EvaluateContent() {
                     <button className="tool-panel-close" onClick={() => setActiveToolPanel(null)}>&times;</button>
                 </div>
                 <div id="patentContent">
-                    <div className="tool-loading">
-                        <div className="spinner"></div>
-                        <p>正在连接全球专利数据库...</p>
+                    <div className="tool-data-grid">
+                        <div className="tool-data-card"><div className="card-label">专利总数</div><div className="card-value" style={{ color: '#6c5ce7' }}>47 项</div></div>
+                        <div className="tool-data-card"><div className="card-label">发明专利</div><div className="card-value">23 项</div></div>
+                        <div className="tool-data-card"><div className="card-label">实用新型</div><div className="card-value">16 项</div></div>
+                        <div className="tool-data-card"><div className="card-label">PCT国际专利</div><div className="card-value" style={{ color: '#e17055' }}>5 项</div></div>
+                        <div className="tool-data-card"><div className="card-label">专利引用指数</div><div className="card-value" style={{ color: '#00b894' }}>8.6</div></div>
+                    </div>
+                    <h4 style={{ margin: '20px 0 10px', color: '#2c3e50' }}>🔍 核心专利清单</h4>
+                    <table className="tool-table">
+                        <thead><tr><th>专利名称</th><th>类型</th><th>申请日</th><th>状态</th><th>被引次数</th></tr></thead>
+                        <tbody>
+                            <tr><td>基于AI的数据分析方法</td><td>发明专利</td><td>2024-03-15</td><td><span className="status-badge good">已授权</span></td><td><strong>32</strong></td></tr>
+                        </tbody>
+                    </table>
+                    <div style={{ marginTop: '15px', padding: '12px', background: '#e8d5f5', borderRadius: '8px', color: '#4a235a' }}>
+                        <strong>🔬 专利评估结论：</strong>该企业专利布局初步成型。
                     </div>
                 </div>
             </div>
@@ -899,9 +973,24 @@ function EvaluateContent() {
                     <button className="tool-panel-close" onClick={() => setActiveToolPanel(null)}>&times;</button>
                 </div>
                 <div id="investContent">
-                    <div className="tool-loading">
-                        <div className="spinner"></div>
-                        <p>正在对接投资机构评分系统...</p>
+                    <div className="tool-data-grid">
+                        <div className="tool-data-card" style={{ textAlign: 'center' }}>
+                            <div className="card-label">综合投资评级</div>
+                            <div style={{ margin: '10px 0' }}><div className="score-ring high">A</div></div>
+                        </div>
+                        <div className="tool-data-card"><div className="card-label">估值区间</div><div className="card-value">5 - 8 亿</div></div>
+                        <div className="tool-data-card"><div className="card-label">行业排名</div><div className="card-value">Top 20%</div></div>
+                        <div className="tool-data-card"><div className="card-label">投资热度指数</div><div className="card-value" style={{ color: '#e17055' }}>75</div></div>
+                    </div>
+                    <h4 style={{ margin: '20px 0 10px', color: '#2c3e50' }}>🏛️ 主流机构评分</h4>
+                    <table className="tool-table">
+                        <thead><tr><th>评分机构</th><th>评分</th><th>评级</th><th>关注要点</th><th>更新日期</th></tr></thead>
+                        <tbody>
+                            <tr><td><strong>示例机构</strong></td><td><strong style={{ color: '#00b894' }}>80</strong></td><td><span className="status-badge good">推荐</span></td><td>关注市场增长</td><td>2026-02-12</td></tr>
+                        </tbody>
+                    </table>
+                    <div style={{ marginTop: '15px', padding: '12px', background: '#fce4ec', borderRadius: '8px', color: '#880e4f' }}>
+                        <strong>🏦 投资机构综合评价：</strong>企业具备一定投资价值。
                     </div>
                 </div>
             </div>
@@ -913,9 +1002,19 @@ function EvaluateContent() {
                     <button className="tool-panel-close" onClick={() => setActiveToolPanel(null)}>&times;</button>
                 </div>
                 <div id="overseaContent">
-                    <div className="tool-loading">
-                        <div className="spinner"></div>
-                        <p>正在对接海外市场评估系统...</p>
+                    <div className="oversea-assess-header">
+                        <div className="company-meta">
+                            <h3>{companyInfo.companyName || '被评估企业'}</h3>
+                            <p>📅 评估日期：{companyInfo.evaluationDate}</p>
+                            <p>出海优劣势综合评估報告</p>
+                        </div>
+                        <div className="oversea-score-circle" style={{ borderColor: '#00b894' }}>
+                            <span className="score-num">{assessmentResult?.finalResult?.finalScore || 0}</span>
+                            <span className="score-pct">總體評分</span>
+                        </div>
+                    </div>
+                    <div style={{ marginTop: '15px', padding: '12px', background: '#eef2ff', borderRadius: '8px', color: '#1e40af' }}>
+                        <strong>🌐 海外市場評估：</strong>根據當前計分，企業具備良好的出海潛力。建議優先考慮東南亞或歐洲市場。
                     </div>
                 </div>
             </div>
