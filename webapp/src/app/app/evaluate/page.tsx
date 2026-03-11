@@ -3,8 +3,8 @@ import './evaluate.css'
 import { useState, useEffect, useMemo, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { metrics, categoriesConfig, CategoryConfig, Metric } from '@/lib/metrics-data'
+import { AssessmentEngine } from '@/lib/assessment-engine'
 import mermaid from 'mermaid'
-// 已移除客戶端計分引進，改用服務端 API
 
 import {
     Chart as ChartJS,
@@ -112,6 +112,11 @@ function EvaluateContent() {
     const [assessmentResult, setAssessmentResult] = useState<any>(null)
     const [aiResult, setAiResult] = useState<any>(null)
 
+    // 本地實時計分 (對應付費會員輸入時的即時反饋)
+    const liveAssessmentResult = useMemo(() => {
+        return AssessmentEngine.runFullAssessment(values);
+    }, [values]);
+
     // 擴展工具數據 (稅務、專利、投資)
     const [toolsData, setToolsData] = useState<any>({
         tax: {
@@ -197,19 +202,16 @@ function EvaluateContent() {
             })
             setValues(newValues)
 
-            if (data.isDemo || id.startsWith('demo-')) {
-                setIsReadOnly(true)
-            } else {
-                setIsReadOnly(false)
-            }
-            if (ev.deep_analysis) setAiResult(ev.deep_analysis)
-
             const calcRes = await fetch('/api/assessment/calculate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ metrics: newValues })
             });
-            if (calcRes.ok) setAssessmentResult(await calcRes.json());
+
+            if (calcRes.ok) {
+                const result = await calcRes.json();
+                setAssessmentResult(result);
+            }
 
         } catch (err: any) {
             setError(err.message)
@@ -227,7 +229,6 @@ function EvaluateContent() {
                 companyName: "智创科技有限公司",
                 industry: "tech",
                 fundingStage: "a",
-                evaluationDate: "2023-05-18",
                 registeredCapital: "10000",
                 paidInCapital: "5000",
                 unifiedCreditCode: "91310115MA1H8U7X2L",
@@ -252,21 +253,12 @@ function EvaluateContent() {
                     { name: "边缘计算推理套件", type: "硬件产品", model: "ToB", price: 15, cost: 11, date: "2025-08-10" }
                 ],
                 scores: {
-                    "team_size": 65, "team_experience": 8, "ceo_background": 8, "cto_background": 7, "cmo_background": 6, "cfo_background": 5, "team_stability": 8, "team_complementarity": 7,
-                    "advisor_quality": 6, "board_quality": 6, "team_education": 8, "team_network": 7, "team_culture": 7, "team_innovation": 8, "team_execution": 7, "product_maturity": 7,
-                    "tech_innovation": 8.5, "tech_barriers": 8, "ip_portfolio": 47, "product_demand": 8, "user_experience": 7.5, "product_quality": 7, "development_speed": 7.5, "rd_budget": 25,
-                    "rd_team_size": 45, "product_roadmap": 8, "tech_scalability": 8.5, "data_assets": 7, "algorithm_advantage": 8.5, "platform_ecosystem": 6, "product_differentiation": 8.5,
-                    "integration_capability": 7, "tech_trend_alignment": 8.5, "product_patent": 8, "quality_certification": 5, "market_size": 1200, "market_growth": 35, "market_share": 5.5,
-                    "customer_acquisition": 120, "customer_retention": 88, "brand_awareness": 6, "sales_growth": 120, "channel_coverage": 6, "competition_intensity": 7, "competitive_advantage": 8,
-                    "overseas_expansion": 5, "customer_satisfaction": 8.5, "customer_lifetime_value": 15000, "market_position": 7.5, "pricing_power": 7, "distribution_network": 5, "marketing_efficiency": 7,
-                    "market_penetration": 15, "competitor_count": 15, "barrier_to_entry": 8, "revenue": 32000, "revenue_growth": 150, "gross_margin": 65, "net_margin": 20, "burn_rate": 800,
-                    "cash_runway": 18, "asset_liability_ratio": 35, "current_ratio": 2.5, "roi": 45, "roe": 30, "customer_acquisition_cost": 4, "revenue_per_employee": 492, "profit_per_employee": 98,
-                    "funding_history": 8.5, "investor_quality": 9, "valuation_multiple": 15, "financial_control": 7, "audit_quality": 8, "operational_efficiency": 120, "process_standardization": 6,
-                    "supply_chain": 7, "production_capacity": 85, "quality_control": 8, "employee_productivity": 65, "it_infrastructure": 8, "operational_risk": 7, "cost_control": 7,
-                    "asset_utilization": 75, "vendor_management": 6, "logistics_capability": 15, "scalability": 9, "crisis_management": 7, "compliance": 8, "strategy_clarity": 8.5,
-                    "business_model": 8.5, "corporate_governance": 7, "risk_management": 7, "succession_plan": 5, "csr": 7, "esg_score": 7.5, "innovation_culture": 9, "strategic_partnerships": 7,
-                    "long_term_vision": 8, "sustainable_growth": 45, "market_expansion": 8, "product_pipeline": 8, "talent_attraction": 8, "climate_impact": 8, "resource_efficiency": 7.5,
-                    "community_engagement": 6, "adaptability": 8.5, "reputation_management": 7, "future_readiness": 9
+                    "team_size": 65, "team_experience": 8, "ceo_background": 8, "cto_background": 7, "cmo_background": 6, "cfo_background": 5, "team_stability": 8, "team_complementarity": 7, "advisor_quality": 6, "board_quality": 6, "team_education": 8, "team_network": 7, "team_culture": 7, "team_innovation": 8, "team_execution": 7,
+                    "product_maturity": 7, "tech_innovation": 8.5, "tech_barriers": 8, "ip_portfolio": 47, "product_demand": 8, "user_experience": 7.5, "product_quality": 7, "development_speed": 7.5, "rd_budget": 25, "rd_team_size": 45, "product_roadmap": 8, "tech_scalability": 8.5, "data_assets": 7, "algorithm_advantage": 8.5, "platform_ecosystem": 6, "product_differentiation": 8.5, "integration_capability": 7, "tech_trend_alignment": 8.5, "product_patent": 8, "quality_certification": 5,
+                    "market_size": 1200, "market_growth": 35, "market_share": 5.5, "customer_acquisition": 120, "customer_retention": 88, "brand_awareness": 6, "sales_growth": 120, "channel_coverage": 6, "competition_intensity": 7, "competitive_advantage": 8, "overseas_expansion": 5, "customer_satisfaction": 8.5, "customer_lifetime_value": 15000, "market_position": 7.5, "pricing_power": 7, "distribution_network": 5, "marketing_efficiency": 7, "market_penetration": 15, "competitor_count": 15, "barrier_to_entry": 8,
+                    "revenue": 32000, "revenue_growth": 150, "gross_margin": 65, "net_margin": 20, "burn_rate": 800, "cash_runway": 18, "asset_liability_ratio": 35, "current_ratio": 2.5, "roi": 45, "roe": 30, "customer_acquisition_cost": 4, "revenue_per_employee": 492, "profit_per_employee": 98, "funding_history": 8.5, "investor_quality": 9, "valuation_multiple": 15, "financial_control": 7, "audit_quality": 8,
+                    "operational_efficiency": 120, "process_standardization": 6, "supply_chain": 7, "production_capacity": 85, "quality_control": 8, "employee_productivity": 65, "it_infrastructure": 8, "operational_risk": 7, "cost_control": 7, "asset_utilization": 75, "vendor_management": 6, "logistics_capability": 15, "scalability": 9, "crisis_management": 7, "compliance": 8,
+                    "strategy_clarity": 8.5, "business_model": 8.5, "corporate_governance": 7, "risk_management": 7, "succession_plan": 5, "csr": 7, "esg_score": 7.5, "innovation_culture": 9, "strategic_partnerships": 7, "long_term_vision": 8, "sustainable_growth": 45, "market_expansion": 8, "product_pipeline": 8, "talent_attraction": 8, "climate_impact": 8, "resource_efficiency": 7.5, "community_engagement": 6, "adaptability": 8.5, "reputation_management": 7, "future_readiness": 9
                 },
                 toolsData: {
                     tax: {
@@ -307,7 +299,6 @@ function EvaluateContent() {
                 companyName: "环球重工集团有限公司",
                 industry: "manufacturing",
                 fundingStage: "ipo",
-                evaluationDate: "2010-03-12",
                 registeredCapital: "200000",
                 paidInCapital: "180000",
                 unifiedCreditCode: "91110108MA002Y6T5G",
@@ -333,21 +324,12 @@ function EvaluateContent() {
                     { name: "新能源港口作业机器人", type: "智能装备", model: "ToG", price: 280, cost: 180, date: "2025-03-10" }
                 ],
                 scores: {
-                    "team_size": 120, "team_experience": 22, "ceo_background": 9.5, "cto_background": 8.5, "cmo_background": 9.0, "cfo_background": 9.2, "team_stability": 9.0, "team_complementarity": 8.5,
-                    "advisor_quality": 8.0, "board_quality": 9.0, "team_education": 8.5, "team_network": 9.2, "team_culture": 8.5, "team_innovation": 8.0, "team_execution": 9.0, "product_maturity": 9.5,
-                    "tech_innovation": 8.5, "tech_barriers": 9.0, "ip_portfolio": 352, "product_demand": 9.2, "user_experience": 8.2, "product_quality": 9.5, "development_speed": 7.5, "rd_budget": 8.5,
-                    "rd_team_size": 850, "product_roadmap": 8.8, "tech_scalability": 9.0, "data_assets": 8.5, "algorithm_advantage": 8.0, "platform_ecosystem": 7.5, "product_differentiation": 8.8,
-                    "integration_capability": 8.5, "tech_trend_alignment": 8.5, "product_patent": 9.0, "quality_certification": 10, "market_size": 5000, "market_growth": 12, "market_share": 12.5,
-                    "customer_acquisition": 150, "customer_retention": 95, "brand_awareness": 9.2, "sales_growth": 15, "channel_coverage": 9.5, "competition_intensity": 8.0, "competitive_advantage": 9.0,
-                    "overseas_expansion": 8.5, "customer_satisfaction": 9.2, "customer_lifetime_value": 850000, "market_position": 9.5, "pricing_power": 8.8, "distribution_network": 9.2, "marketing_efficiency": 8.5,
-                    "market_penetration": 25, "competitor_count": 12, "barrier_to_entry": 9.5, "revenue": 1250000, "revenue_growth": 18, "gross_margin": 25, "net_margin": 12, "burn_rate": 1500,
-                    "cash_runway": 36, "asset_liability_ratio": 45, "current_ratio": 1.5, "roi": 18, "roe": 15, "customer_acquisition_cost": 8, "revenue_per_employee": 250, "profit_per_employee": 30,
-                    "funding_history": 9.5, "investor_quality": 9.5, "valuation_multiple": 8.5, "financial_control": 9.5, "audit_quality": 9.8, "operational_efficiency": 180, "process_standardization": 9.2,
-                    "supply_chain": 9.5, "production_capacity": 88, "quality_control": 9.5, "employee_productivity": 6500, "it_infrastructure": 8.8, "operational_risk": 9.2, "cost_control": 8.5,
-                    "asset_utilization": 82, "vendor_management": 9.0, "logistics_capability": 12, "scalability": 8.5, "crisis_management": 9.2, "compliance": 9.8, "strategy_clarity": 9.5,
-                    "business_model": 9.2, "corporate_governance": 9.5, "risk_management": 9.2, "succession_plan": 8.5, "csr": 9.0, "esg_score": 8.8, "innovation_culture": 8.5, "strategic_partnerships": 9.2,
-                    "long_term_vision": 9.5, "sustainable_growth": 15, "market_expansion": 8.8, "product_pipeline": 15, "talent_attraction": 9.2, "climate_impact": 9.0, "resource_efficiency": 8.5,
-                    "community_engagement": 8.2, "adaptability": 8.8, "reputation_management": 9.2, "future_readiness": 9.5
+                    "team_size": 120, "team_experience": 22, "ceo_background": 9.5, "cto_background": 8.5, "cmo_background": 9.0, "cfo_background": 9.2, "team_stability": 9.0, "team_complementarity": 8.5, "advisor_quality": 8.0, "board_quality": 9.0, "team_education": 8.5, "team_network": 9.2, "team_culture": 8.5, "team_innovation": 8.0, "team_execution": 9.0,
+                    "product_maturity": 9.5, "tech_innovation": 8.5, "tech_barriers": 9.0, "ip_portfolio": 352, "product_demand": 9.2, "user_experience": 8.2, "product_quality": 9.5, "development_speed": 7.5, "rd_budget": 8.5, "rd_team_size": 850, "product_roadmap": 8.8, "tech_scalability": 9.0, "data_assets": 8.5, "algorithm_advantage": 8.0, "platform_ecosystem": 7.5, "product_differentiation": 8.8, "integration_capability": 8.5, "tech_trend_alignment": 8.5, "product_patent": 9.0, "quality_certification": 10,
+                    "market_size": 5000, "market_growth": 12, "market_share": 12.5, "customer_acquisition": 150, "customer_retention": 95, "brand_awareness": 9.2, "sales_growth": 15, "channel_coverage": 9.5, "competition_intensity": 8.0, "competitive_advantage": 9.0, "overseas_expansion": 8.5, "customer_satisfaction": 9.2, "customer_lifetime_value": 850000, "market_position": 9.5, "pricing_power": 8.8, "distribution_network": 9.2, "marketing_efficiency": 8.5, "market_penetration": 25, "competitor_count": 12, "barrier_to_entry": 9.5,
+                    "revenue": 1250000, "revenue_growth": 18, "gross_margin": 25, "net_margin": 12, "burn_rate": 1500, "cash_runway": 36, "asset_liability_ratio": 45, "current_ratio": 1.5, "roi": 18, "roe": 15, "customer_acquisition_cost": 8, "revenue_per_employee": 250, "profit_per_employee": 30, "funding_history": 9.5, "investor_quality": 9.5, "valuation_multiple": 8.5, "financial_control": 9.5, "audit_quality": 9.8,
+                    "operational_efficiency": 180, "process_standardization": 9.2, "supply_chain": 9.5, "production_capacity": 88, "quality_control": 9.5, "employee_productivity": 6500, "it_infrastructure": 8.8, "operational_risk": 9.2, "cost_control": 8.5, "asset_utilization": 82, "vendor_management": 9.0, "logistics_capability": 12, "scalability": 8.5, "crisis_management": 9.2, "compliance": 9.8,
+                    "strategy_clarity": 9.5, "business_model": 9.2, "corporate_governance": 9.5, "risk_management": 9.2, "succession_plan": 8.5, "csr": 9.0, "esg_score": 8.8, "innovation_culture": 8.5, "strategic_partnerships": 9.2, "long_term_vision": 9.5, "sustainable_growth": 15, "market_expansion": 8.8, "product_pipeline": 15, "talent_attraction": 9.2, "climate_impact": 9.0, "resource_efficiency": 8.5, "community_engagement": 8.2, "adaptability": 8.8, "reputation_management": 9.2, "future_readiness": 9.5
                 },
                 toolsData: {
                     tax: {
@@ -386,7 +368,6 @@ function EvaluateContent() {
                 companyName: "灵动机器人有限公司",
                 industry: "robot",
                 fundingStage: "seed",
-                evaluationDate: "2024-01-01",
                 registeredCapital: "1500",
                 paidInCapital: "750",
                 unifiedCreditCode: "91320594MA27X9Y41N",
@@ -407,21 +388,12 @@ function EvaluateContent() {
                     { name: "基础型减速机样机", type: "零组件", model: "ToB", price: 0.12, cost: 0.10, date: "2026-03-01" }
                 ],
                 scores: {
-                    "team_size": 12, "team_experience": 4.5, "ceo_background": 7.5, "cto_background": 8.0, "cmo_background": 4.5, "cfo_background": 3.5, "team_stability": 6.5, "team_complementarity": 7.0,
-                    "advisor_quality": 5.5, "board_quality": 5.0, "team_education": 8.5, "team_network": 5.0, "team_culture": 7.5, "team_innovation": 8.5, "team_execution": 6.5, "product_maturity": 3.5,
-                    "tech_innovation": 8.5, "tech_barriers": 7.5, "ip_portfolio": 8, "product_demand": 7.5, "user_experience": 5.5, "product_quality": 6.5, "development_speed": 8.0, "rd_budget": 45,
-                    "rd_team_size": 9, "product_roadmap": 6.5, "tech_scalability": 7.0, "data_assets": 3.0, "algorithm_advantage": 7.5, "platform_ecosystem": 2.5, "product_differentiation": 8.0,
-                    "integration_capability": 5.0, "tech_trend_alignment": 8.5, "product_patent": 6.5, "quality_certification": 1, "market_size": 850, "market_growth": 45, "market_share": 0.2,
-                    "customer_acquisition": 350, "customer_retention": 75, "brand_awareness": 2.5, "sales_growth": 25, "channel_coverage": 2.5, "competition_intensity": 7.5, "competitive_advantage": 6.5,
-                    "overseas_expansion": 3.5, "customer_satisfaction": 8.0, "customer_lifetime_value": 5500, "market_position": 5.5, "pricing_power": 5.0, "distribution_network": 2, "marketing_efficiency": 4.5,
-                    "market_penetration": 1.5, "competitor_count": 25, "barrier_to_entry": 6.5, "revenue": 1200, "revenue_growth": 15, "gross_margin": 35, "net_margin": -55, "burn_rate": 85,
-                    "cash_runway": 12, "asset_liability_ratio": 15, "current_ratio": 3.5, "roi": -25, "roe": -35, "customer_acquisition_cost": 24, "revenue_per_employee": 100, "profit_per_employee": -45,
-                    "funding_history": 4.5, "investor_quality": 5.5, "valuation_multiple": 25, "financial_control": 5.0, "audit_quality": 3.5, "operational_efficiency": 65, "process_standardization": 3.5,
-                    "supply_chain": 4.5, "production_capacity": 15, "quality_control": 5.5, "employee_productivity": 12, "it_infrastructure": 6.5, "operational_risk": 5.5, "cost_control": 4.5,
-                    "asset_utilization": 35, "vendor_management": 4.0, "logistics_capability": 65, "scalability": 8.5, "crisis_management": 5.5, "compliance": 6.5, "strategy_clarity": 8.0,
-                    "business_model": 7.5, "corporate_governance": 5.5, "risk_management": 6.0, "succession_plan": 3.5, "csr": 4.5, "esg_score": 5.5, "innovation_culture": 8.5, "strategic_partnerships": 5.5,
-                    "long_term_vision": 8.5, "sustainable_growth": 45, "market_expansion": 7.5, "product_pipeline": 4, "talent_attraction": 8.0, "climate_impact": 7.5, "resource_efficiency": 6.5,
-                    "community_engagement": 5.0, "adaptability": 8.5, "reputation_management": 6.5, "future_readiness": 8.0
+                    "team_size": 12, "team_experience": 4.5, "ceo_background": 7.5, "cto_background": 8.0, "cmo_background": 4.5, "cfo_background": 3.5, "team_stability": 6.5, "team_complementarity": 7.0, "advisor_quality": 5.5, "board_quality": 5.0, "team_education": 8.5, "team_network": 5.0, "team_culture": 7.5, "team_innovation": 8.5, "team_execution": 6.5,
+                    "product_maturity": 3.5, "tech_innovation": 8.5, "tech_barriers": 7.5, "ip_portfolio": 8, "product_demand": 7.5, "user_experience": 5.5, "product_quality": 6.5, "development_speed": 8.0, "rd_budget": 45, "rd_team_size": 9, "product_roadmap": 6.5, "tech_scalability": 7.0, "data_assets": 3.0, "algorithm_advantage": 7.5, "platform_ecosystem": 2.5, "product_differentiation": 8.0, "integration_capability": 5.0, "tech_trend_alignment": 8.5, "product_patent": 6.5, "quality_certification": 1,
+                    "market_size": 850, "market_growth": 45, "market_share": 0.2, "customer_acquisition": 350, "customer_retention": 75, "brand_awareness": 2.5, "sales_growth": 25, "channel_coverage": 2.5, "competition_intensity": 7.5, "competitive_advantage": 6.5, "overseas_expansion": 3.5, "customer_satisfaction": 8.0, "customer_lifetime_value": 5500, "market_position": 5.5, "pricing_power": 5.0, "distribution_network": 2, "marketing_efficiency": 4.5, "market_penetration": 1.5, "competitor_count": 25, "barrier_to_entry": 6.5,
+                    "revenue": 1200, "revenue_growth": 15, "gross_margin": 35, "net_margin": -55, "burn_rate": 85, "cash_runway": 12, "asset_liability_ratio": 15, "current_ratio": 3.5, "roi": -25, "roe": -35, "customer_acquisition_cost": 24, "revenue_per_employee": 100, "profit_per_employee": -45, "funding_history": 4.5, "investor_quality": 5.5, "valuation_multiple": 25, "financial_control": 5.0, "audit_quality": 3.5,
+                    "operational_efficiency": 65, "process_standardization": 3.5, "supply_chain": 4.5, "production_capacity": 15, "quality_control": 5.5, "employee_productivity": 12, "it_infrastructure": 6.5, "operational_risk": 5.5, "cost_control": 4.5, "asset_utilization": 35, "vendor_management": 4.0, "logistics_capability": 65, "scalability": 8.5, "crisis_management": 5.5, "compliance": 6.5,
+                    "strategy_clarity": 8.0, "business_model": 7.5, "corporate_governance": 5.5, "risk_management": 6.0, "succession_plan": 3.5, "csr": 4.5, "esg_score": 5.5, "innovation_culture": 8.5, "strategic_partnerships": 5.5, "long_term_vision": 8.5, "sustainable_growth": 45, "market_expansion": 7.5, "product_pipeline": 4, "talent_attraction": 8.0, "climate_impact": 7.5, "resource_efficiency": 6.5, "community_engagement": 5.0, "adaptability": 8.5, "reputation_management": 6.5, "future_readiness": 8.0
                 },
                 toolsData: {
                     tax: {
@@ -499,7 +471,7 @@ function EvaluateContent() {
         setIsDemoLoaded(true);
 
         if (demo.scores) {
-            silentCalculate(newValues);
+            setValues(newValues);
         }
 
         setTimeout(() => {
@@ -509,21 +481,20 @@ function EvaluateContent() {
     }
 
     async function silentCalculate(targetValues: Record<string, number>) {
-        try {
-            const res = await fetch('/api/assessment/calculate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ metrics: targetValues })
-            })
-            const data = await res.json()
-            if (res.ok) setAssessmentResult(data)
-        } catch (e) { }
+        // 現在使用 liveAssessmentResult 自動同步，silentCalculate 主要用於手動觸發狀態同步
+        const result = AssessmentEngine.runFullAssessment(targetValues);
+        setAssessmentResult(result);
     }
 
     async function handleCalculate(customValues?: Record<string, number>) {
         setError(''); setSuccess('')
         const targetValues = customValues || values;
         try {
+            // 首先使用本地引擎獲取結果 (即時反饋)
+            const localResult = AssessmentEngine.runFullAssessment(targetValues);
+            setAssessmentResult(localResult);
+
+            // 同步調用 API 以進行持久化或更複雜的後端驗證 (可選)
             const res = await fetch('/api/assessment/calculate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -531,6 +502,7 @@ function EvaluateContent() {
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error)
+
             setAssessmentResult(data)
             setShowComprehensiveModal(true);
             setActiveTab('结果');
@@ -542,9 +514,10 @@ function EvaluateContent() {
     }
 
     const radarData = useMemo(() => {
-        if (!assessmentResult) return { labels: [], datasets: [] };
+        const result = assessmentResult || liveAssessmentResult;
+        if (!result) return { labels: [], datasets: [] };
         const labels = categoriesConfig.map(c => c.name);
-        const data = categoriesConfig.map(c => assessmentResult.categoryScores[c.id]?.score || 0);
+        const data = categoriesConfig.map(c => result.categoryScores[c.id]?.score || 0);
         return {
             labels,
             datasets: [
@@ -559,7 +532,7 @@ function EvaluateContent() {
                 },
             ],
         }
-    }, [assessmentResult])
+    }, [assessmentResult, liveAssessmentResult])
 
     const getGradeClass = (score: number) => {
         if (score >= 85) return { bg: '#d4edda', color: '#155724', text: 'A级 (优质投资标的)' };
@@ -1627,19 +1600,25 @@ function EvaluateContent() {
                     </div>
                     <div className="modal-score-hero">
                         <div className="comprehensive-score" style={{
-                            background: assessmentResult?.totalScore >= 70 ? 'linear-gradient(135deg, #00b894, #55efc4)' :
-                                assessmentResult?.totalScore >= 50 ? 'linear-gradient(135deg, #fdcb6e, #f39c12)' :
+                            background: (assessmentResult?.totalScore || liveAssessmentResult.totalScore || 0) >= 70 ? 'linear-gradient(135deg, #00b894, #55efc4)' :
+                                (assessmentResult?.totalScore || liveAssessmentResult.totalScore || 0) >= 50 ? 'linear-gradient(135deg, #fdcb6e, #f39c12)' :
                                     'linear-gradient(135deg, #ff7675, #d63031)'
                         }}>
-                            <span id="modalScoreValue">{assessmentResult?.totalScore?.toFixed(1) || '0'}</span>
-                            <span style={{ fontSize: '1rem', opacity: 0.9 }}>總體評分</span>
+                            <span id="modalScoreValue" style={{ fontSize: '3.5rem', fontWeight: 900, color: 'white' }}>{(assessmentResult?.totalScore || liveAssessmentResult.totalScore || 0).toFixed(0)}</span>
+                            <span style={{ fontSize: '18px', color: 'rgba(255,255,255,0.8)' }}>/100</span>
                         </div>
-                        <div className="score-grade" style={
-                            assessmentResult?.totalScore ?
-                                { backgroundColor: getGradeClass(assessmentResult.totalScore).bg, color: getGradeClass(assessmentResult.totalScore).color } :
-                                { backgroundColor: '#eee', color: '#666' }
-                        }>
-                            {assessmentResult?.totalScore ? getGradeClass(assessmentResult.totalScore).text : '尚未評估'}
+                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b', marginBottom: '8px' }}>
+                            綜合評估得分
+                        </div>
+                        <div style={{
+                            padding: '6px 16px',
+                            borderRadius: '20px',
+                            backgroundColor: getGradeClass(assessmentResult?.totalScore || liveAssessmentResult.totalScore).bg,
+                            color: getGradeClass(assessmentResult?.totalScore || liveAssessmentResult.totalScore).color,
+                            fontSize: '14px',
+                            fontWeight: 700
+                        }}>
+                            {getGradeClass(assessmentResult?.totalScore || liveAssessmentResult.totalScore).text}
                         </div>
                     </div>
                     <div className="modal-body">
@@ -1649,7 +1628,8 @@ function EvaluateContent() {
                                 {categoriesConfig.map(cat => (
                                     <div key={cat.id} className="modal-category-card">
                                         <div className="cat-name">{cat.name}</div>
-                                        <div className="cat-score">{assessmentResult?.categoryScores[cat.id]?.score?.toFixed(1) || '0'}</div>
+                                        <div className="cat-score">{(assessmentResult?.categoryScores[cat.id]?.score || liveAssessmentResult.categoryScores[cat.id]?.score || 0).toFixed(1)}</div>
+                                        <div className="cat-weight">{(assessmentResult?.categoryScores[cat.id]?.totalWeight || liveAssessmentResult.categoryScores[cat.id]?.totalWeight || 0).toFixed(1)}%</div>
                                     </div>
                                 ))}
                             </div>
@@ -1696,7 +1676,7 @@ function EvaluateContent() {
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px', fontWeight: 700, color: '#1e40af' }}>
-                            权重总和：<span style={{ color: 'var(--primary)', fontSize: '18px' }}>100.0</span>%
+                            权重总和：<span style={{ color: 'var(--primary)', fontSize: '18px' }}>{(assessmentResult?.totalWeight || liveAssessmentResult.totalWeight || 0).toFixed(1)}</span>%
                         </div>
 
                         {/* 7 大维度入口卡片 (对齐截图颜色与布局) */}
@@ -1712,6 +1692,7 @@ function EvaluateContent() {
                                     { bg: '#2dd4bf', icon: '🌱' }, // 持续 - 浅绿
                                 ];
                                 const cfg = colors[idx] || colors[0];
+                                const catScore = (assessmentResult || liveAssessmentResult).categoryScores[cat.id];
                                 return (
                                     <button
                                         key={cat.id}
@@ -1719,24 +1700,27 @@ function EvaluateContent() {
                                         style={{
                                             background: cfg.bg,
                                             color: '#fff',
-                                            padding: '30px 20px',
+                                            padding: '24px 16px',
                                             borderRadius: '16px',
                                             border: activeCategory === cat.id ? '4px solid #fff' : 'none',
                                             boxShadow: activeCategory === cat.id ? '0 0 0 2px ' + cfg.bg : '0 10px 15px rgba(0,0,0,0.1)',
                                             display: 'flex',
                                             flexDirection: 'column',
                                             alignItems: 'center',
-                                            gap: '12px',
+                                            gap: '10px',
                                             cursor: 'pointer',
-                                            transition: 'transform 0.2s',
+                                            transition: 'all 0.2s',
                                             textAlign: 'center',
-                                            gridColumn: idx >= 5 ? 'span 1' : 'auto', // 处理最后两个居中
-                                            transform: activeCategory === cat.id ? 'scale(1.05)' : 'scale(1)'
+                                            transform: activeCategory === cat.id ? 'scale(1.05)' : 'scale(1)',
+                                            minWidth: '0'
                                         }}
                                     >
-                                        <span style={{ fontSize: '32px' }}>{cfg.icon}</span>
-                                        <div style={{ fontWeight: 800, fontSize: '16px' }}>{cat.name}</div>
-                                        <div style={{ fontSize: '12px', opacity: 0.9 }}>{metrics.filter(m => m.category === cat.id).length}项指标 | {activeCategory === cat.id ? '20' : '15'}%权重</div>
+                                        <span style={{ fontSize: '28px' }}>{cfg.icon}</span>
+                                        <div style={{ fontWeight: 800, fontSize: '15px', whiteSpace: 'nowrap' }}>{cat.name}</div>
+                                        <div style={{ fontSize: '22px', fontWeight: 900 }}>{(catScore?.score || 0).toFixed(1)}</div>
+                                        <div style={{ fontSize: '11px', opacity: 0.9 }}>
+                                            {metrics.filter(m => m.category === cat.id).length}项指标 | {(catScore?.totalWeight || 0).toFixed(1)}%权重
+                                        </div>
                                     </button>
                                 );
                             }).slice(0, 5)}
@@ -1748,7 +1732,8 @@ function EvaluateContent() {
                                     { bg: '#334155', icon: '🎯' }, // 战略 - 深蓝
                                     { bg: '#2dd4bf', icon: '🌱' }, // 持续 - 浅绿
                                 ];
-                                const cfg = colors[idx];
+                                const cfg = colors[idx] || colors[0];
+                                const catScore = (assessmentResult || liveAssessmentResult).categoryScores[cat.id];
                                 return (
                                     <button
                                         key={cat.id}
@@ -1756,23 +1741,27 @@ function EvaluateContent() {
                                         style={{
                                             background: cfg.bg,
                                             color: '#fff',
-                                            padding: '30px 20px',
+                                            padding: '24px 32px',
                                             borderRadius: '16px',
-                                            width: '260px',
                                             border: activeCategory === cat.id ? '4px solid #fff' : 'none',
                                             boxShadow: activeCategory === cat.id ? '0 0 0 2px ' + cfg.bg : '0 10px 15px rgba(0,0,0,0.1)',
                                             display: 'flex',
                                             flexDirection: 'column',
                                             alignItems: 'center',
-                                            gap: '12px',
+                                            gap: '10px',
                                             cursor: 'pointer',
-                                            transition: 'transform 0.2s',
-                                            textAlign: 'center'
+                                            transition: 'all 0.2s',
+                                            textAlign: 'center',
+                                            transform: activeCategory === cat.id ? 'scale(1.05)' : 'scale(1)',
+                                            minWidth: '200px'
                                         }}
                                     >
-                                        <span style={{ fontSize: '32px' }}>{cfg.icon}</span>
-                                        <div style={{ fontWeight: 800, fontSize: '16px' }}>{cat.name}</div>
-                                        <div style={{ fontSize: '12px', opacity: 0.9 }}>{metrics.filter(m => m.category === cat.id).length}项指标 | 10%权重</div>
+                                        <span style={{ fontSize: '28px' }}>{cfg.icon}</span>
+                                        <div style={{ fontWeight: 800, fontSize: '15px' }}>{cat.name}</div>
+                                        <div style={{ fontSize: '22px', fontWeight: 900 }}>{(catScore?.score || 0).toFixed(1)}</div>
+                                        <div style={{ fontSize: '11px', opacity: 0.9 }}>
+                                            {metrics.filter(m => m.category === cat.id).length}项指标 | {(catScore?.totalWeight || 0).toFixed(1)}%权重
+                                        </div>
                                     </button>
                                 );
                             })}
