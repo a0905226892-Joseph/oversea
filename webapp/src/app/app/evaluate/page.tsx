@@ -173,7 +173,8 @@ function EvaluateContent() {
         if (editId) {
             loadEvaluation(editId)
         } else {
-            handleCalculate();
+            // 進入頁面時僅執行靜默計算以獲取初始分值，不彈出報告窗口
+            silentCalculate(values);
         }
     }, [editId])
 
@@ -950,7 +951,7 @@ function EvaluateContent() {
                 <div className="company-info">
                     <div className="input-group">
                         <label htmlFor="companyName">企业名称</label>
-                        <input type="text" id="companyName" value={companyInfo.companyName} onChange={e => setCompanyInfo(p => ({ ...p, companyName: e.target.value }))} placeholder="输入被评估企业名称" />
+                        <input type="text" id="companyName" value={companyInfo.companyName} onChange={e => setCompanyInfo(p => ({ ...p, companyName: e.target.value }))} placeholder="输入被评估企业名称" autoComplete="off" />
                         <div className="tool-buttons-container" style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                             <button type="button" className={`tool-btn tax-btn ${activeToolPanel === 'tax' ? 'active-tool' : ''}`} id="taxToolBtn" onClick={() => setActiveToolPanel(p => p === 'tax' ? null : 'tax')}>
                                 <span className="tool-icon">📋</span> 导入税务信息
