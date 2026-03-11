@@ -42,6 +42,9 @@ yarn-error.log*
 # local backups
 backup_md/
 *_2026*
+*_2025*
+*_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_*
+
 *.html
 *.jsx
 *.js
@@ -49,3 +52,5 @@ backup_md/
 !src/**/*.css
 !src/**/*.tsx
 !src/**/*.ts
+# 再次確保備份文件被忽略
+src/**/*_202[5-6]*
