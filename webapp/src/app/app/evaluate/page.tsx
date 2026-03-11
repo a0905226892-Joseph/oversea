@@ -824,20 +824,44 @@ function EvaluateContent() {
                             <tbody id="productTableBody">
                                 {products.map((p, idx) => (
                                     <tr key={idx}>
-                                        <td><input type="text" className="product-name" defaultValue={p.name} onChange={() => { }} /></td>
-                                        <td><input type="text" className="product-type" defaultValue={p.type} onChange={() => { }} /></td>
+                                        <td><input type="text" className="product-name" value={p.name} onChange={e => {
+                                            const newProducts = [...products];
+                                            newProducts[idx].name = e.target.value;
+                                            setProducts(newProducts);
+                                        }} /></td>
+                                        <td><input type="text" className="product-type" value={p.type} onChange={e => {
+                                            const newProducts = [...products];
+                                            newProducts[idx].type = e.target.value;
+                                            setProducts(newProducts);
+                                        }} /></td>
                                         <td>
-                                            <select className="product-sales-model" defaultValue={p.model} onChange={() => { }}>
+                                            <select className="product-sales-model" value={p.model} onChange={e => {
+                                                const newProducts = [...products];
+                                                newProducts[idx].model = e.target.value;
+                                                setProducts(newProducts);
+                                            }}>
                                                 <option value="ToC">ToC</option>
                                                 <option value="ToG">ToG</option>
                                                 <option value="ToB">ToB</option>
                                                 <option value="Other">其他</option>
                                             </select>
                                         </td>
-                                        <td><input type="number" className="product-price" defaultValue={Number(p.price)} min="0" step="0.01" onChange={() => { }} /></td>
-                                        <td><input type="number" className="product-cost" defaultValue={Number(p.cost)} min="0" step="0.01" onChange={() => { }} /></td>
-                                        <td><input type="number" className="product-profit" defaultValue={(Number(p.price) - Number(p.cost)).toFixed(2)} readOnly /></td>
-                                        <td><input type="date" className="product-launch-date" defaultValue={p.date} onChange={() => { }} /></td>
+                                        <td><input type="number" className="product-price" value={p.price} min="0" step="0.01" onChange={e => {
+                                            const newProducts = [...products];
+                                            newProducts[idx].price = parseFloat(e.target.value) || 0;
+                                            setProducts(newProducts);
+                                        }} /></td>
+                                        <td><input type="number" className="product-cost" value={p.cost} min="0" step="0.01" onChange={e => {
+                                            const newProducts = [...products];
+                                            newProducts[idx].cost = parseFloat(e.target.value) || 0;
+                                            setProducts(newProducts);
+                                        }} /></td>
+                                        <td><input type="number" className="product-profit" value={(Number(p.price) - Number(p.cost)).toFixed(2)} readOnly /></td>
+                                        <td><input type="date" className="product-launch-date" value={p.date} onChange={e => {
+                                            const newProducts = [...products];
+                                            newProducts[idx].date = e.target.value;
+                                            setProducts(newProducts);
+                                        }} /></td>
                                         <td><button className="remove-product-btn" onClick={() => setProducts(products.filter((_, i) => i !== idx))}>删除</button></td>
                                     </tr>
                                 ))}
@@ -850,7 +874,9 @@ function EvaluateContent() {
 
                 {/* 股东结构与持股比例 */}
                 <div className="deep-info-section">
-                    <h3>股东结构与持股比例 <span id="totalPercentage" className="data-saved-badge">总计: 100%</span></h3>
+                    <h3>股东结构与持股比例 <span id="totalPercentage" className={`data-saved-badge ${shareholders.reduce((sum, sh) => sum + (parseFloat(sh.percentage as any) || 0), 0) === 100 ? 'good' : 'warning'}`}>
+                        总计: {shareholders.reduce((sum, sh) => sum + (parseFloat(sh.percentage as any) || 0), 0).toFixed(1)}%
+                    </span></h3>
                     <table className="shareholder-table">
                         <thead>
                             <tr>
@@ -865,12 +891,32 @@ function EvaluateContent() {
                         <tbody id="shareholderTableBody">
                             {shareholders.map((sh, idx) => (
                                 <tr key={idx}>
-                                    <td><input type="text" className="shareholder-name" defaultValue={sh.name} onChange={() => { }} /></td>
-                                    <td><input type="number" className="shareholder-percentage" defaultValue={Number(sh.percentage)} min="0" max="100" step="0.1" onChange={() => { }} /></td>
-                                    <td><input type="number" className="shareholder-subscribed" defaultValue={Number(sh.subscribed)} min="0" step="0.1" onChange={() => { }} /></td>
-                                    <td><input type="number" className="shareholder-amount" defaultValue={Number(sh.amount)} min="0" step="0.1" onChange={() => { }} /></td>
+                                    <td><input type="text" className="shareholder-name" value={sh.name} onChange={e => {
+                                        const newSh = [...shareholders];
+                                        newSh[idx].name = e.target.value;
+                                        setShareholders(newSh);
+                                    }} /></td>
+                                    <td><input type="number" className="shareholder-percentage" value={sh.percentage} min="0" max="100" step="0.1" onChange={e => {
+                                        const newSh = [...shareholders];
+                                        newSh[idx].percentage = parseFloat(e.target.value) || 0;
+                                        setShareholders(newSh);
+                                    }} /></td>
+                                    <td><input type="number" className="shareholder-subscribed" value={sh.subscribed} min="0" step="0.1" onChange={e => {
+                                        const newSh = [...shareholders];
+                                        newSh[idx].subscribed = parseFloat(e.target.value) || 0;
+                                        setShareholders(newSh);
+                                    }} /></td>
+                                    <td><input type="number" className="shareholder-amount" value={sh.amount} min="0" step="0.1" onChange={e => {
+                                        const newSh = [...shareholders];
+                                        newSh[idx].amount = parseFloat(e.target.value) || 0;
+                                        setShareholders(newSh);
+                                    }} /></td>
                                     <td>
-                                        <select className="shareholder-type" defaultValue={sh.type} onChange={() => { }}>
+                                        <select className="shareholder-type" value={sh.type} onChange={e => {
+                                            const newSh = [...shareholders];
+                                            newSh[idx].type = e.target.value;
+                                            setShareholders(newSh);
+                                        }}>
                                             <option value="common">普通股</option>
                                             <option value="preferred">优先股</option>
                                             <option value="a">A类股</option>
