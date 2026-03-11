@@ -27,6 +27,14 @@ ChartJS.register(
     Legend
 )
 
+const overseaRegionCountries: Record<string, string[]> = {
+    '亚洲': ['日本', '韩国', '新加坡', '泰国', '越南', '印度尼西亚', '马来西亚', '印度', '菲律宾', '柬埔寨', '缅甸', '老挝'],
+    '欧洲': ['英国', '德国', '法国', '意大利', '西班牙', '荷兰', '瑞典', '瑞士', '波兰', '捷克', '葡萄牙', '比利时'],
+    '美洲': ['美国', '加拿大', '巴西', '墨西哥', '阿根廷', '智利', '哥伦比亚', '秘鲁'],
+    '非洲': ['南非', '尼分利亚', '肯尼亚', '埃及', '摩洛哥', '加纳', '坦桑尼亚', '埃塞俄比亚'],
+    '中东地区': ['阿联酋', '沙特阿拉伯', '卡塔尔', '科威特', '巴林', '阿曼', '以色列', '土耳其']
+};
+
 function EvaluateContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -130,6 +138,21 @@ function EvaluateContent() {
             conclusion: "企业具备一定投资价值。"
         }
     })
+
+    // --- 海外市場評估狀態 ---
+    const [isAiConnected, setIsAiConnected] = useState(false)
+    const [isAiConnecting, setIsAiConnecting] = useState(false)
+    const [overseaScorecards, setOverseaScorecards] = useState<any[]>([])
+    const [selectedRegion, setSelectedRegion] = useState('')
+    const [selectedCountry, setSelectedCountry] = useState('')
+    const [countryDetails, setCountryDetails] = useState<any>(null)
+    const [isCountryLoading, setIsCountryLoading] = useState(false)
+    const [matchResults, setMatchResults] = useState<any[] | null>(null)
+    const [isMatching, setIsMatching] = useState(false)
+    const [overseaChatMessages, setOverseaChatMessages] = useState<any[]>([])
+    const [chatInput, setChatInput] = useState('')
+    const [isChatLoading, setIsChatLoading] = useState(false)
+    const [isOverseaLoading, setIsOverseaLoading] = useState(false)
 
     // --- 初始化加載 ---
     useEffect(() => {
@@ -542,6 +565,194 @@ function EvaluateContent() {
         if (score >= 70) return { bg: '#d1ecf1', color: '#0c5460', text: 'B级 (良好投资标的)' };
         if (score >= 50) return { bg: '#fff3cd', color: '#856404', text: 'C级 (建议观望/改善)' };
         return { bg: '#f8d7da', color: '#721c24', text: 'D级 (高风险不建议)' };
+    };
+
+    // --- 海外市場評估邏輯 ---
+    const calculateOverseaScorecards = (result: any) => {
+        if (!result) return [];
+        const cs = result.categoryScores;
+        const catPct = (cat: string) => {
+            if (!cs[cat]) return 0;
+            return Math.round(cs[cat].score);
+        };
+        const getPatentScore = () => {
+            if (toolsData?.patent?.index) return Math.round(toolsData.patent.index * 10);
+            return Math.round(((values['ip_portfolio'] || 0) + (values['product_patent'] || 0)) / 2) || 45;
+        };
+
+        return [
+            { id: 'product', name: '产品技术计分', icon: '🚀', score: catPct('product'), color: '#2ecc71' },
+            { id: 'market', name: '市场竞争力计分', icon: '📊', score: catPct('market'), color: '#e74c3c' },
+            { id: 'finance', name: '财务健康计分', icon: '💰', score: catPct('finance'), color: '#f39c12' },
+            { id: 'patent', name: '专利保护计分', icon: '🛡️', score: getPatentScore(), color: '#6c5ce7' },
+            { id: 'sustainability', name: '可持续发展计分', icon: '🌱', score: catPct('sustainability'), color: '#1abc9c' },
+            { id: 'operations', name: '运营效率计分', icon: '⚙️', score: catPct('operations'), color: '#9b59b6' }
+        ];
+    };
+
+    useEffect(() => {
+        if (activeToolPanel === 'oversea') {
+            if (assessmentResult) {
+                setOverseaScorecards(calculateOverseaScorecards(assessmentResult));
+            }
+            setIsOverseaLoading(true);
+            setTimeout(() => {
+                setIsOverseaLoading(false);
+            }, 1200);
+        }
+    }, [activeToolPanel, assessmentResult]);
+
+    const handleConnectAIDatabase = async () => {
+        setIsAiConnecting(true);
+        const savedKey = localStorage.getItem('deepseekApiKey');
+        if (!savedKey) {
+            setError('請先在「AI 設置」中配置 API Key');
+            setIsAiConnecting(false);
+            return;
+        }
+        try {
+            const res = await fetch('/api/ai-lab/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiKey: savedKey })
+            });
+            if (!res.ok) throw new Error('連接失敗');
+            setIsAiConnected(true);
+            setSuccess('AI 數據庫連接成功！');
+        } catch (err: any) {
+            setError('連接失敗：' + err.message);
+        } finally {
+            setIsAiConnecting(false);
+        }
+    };
+
+    const formatOverseaAIText = (text: string) => {
+        if (!text) return '';
+        let html = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        return html;
+    };
+
+    const handleCountrySelect = async (country: string) => {
+        setSelectedCountry(country);
+        if (!country) return;
+        setIsCountryLoading(true);
+        setCountryDetails(null);
+        try {
+            const industry = companyInfo.industry === 'tech' ? '智能科技' : companyInfo.industry === 'manufacturing' ? '高端製造' : '機器人';
+            const productContext = products.length > 0 ? `主要產品包括：${products.map(p => p.name).join('、')}。` : '';
+
+            const prompt = `企業行業：${industry}。${productContext}請提供${country}的以下商業投資信息，以純JSON格式返回（不要加markdown代碼塊標記，不要加任何其他文字）：\n{\n  "name": "${country}全稱",\n  "capital": "首都",\n  "population": "人口數含單位",\n  "populationNumber": 純數字的人口總數,\n  "gdp": "2025年GDP預計數值（含貨幣單位）",\n  "gdpValue": 2025年GDP純數字數值（原始貨幣）,\n  "gdpUnit": "GDP使用的原始貨幣單位",\n  "salesChannels": [{"name": "針對該行業的渠道名稱", "type": "線上或線下", "percentage": 占比數字}],\n  "partners": [{"name": "建議合作的當地企業/平台名稱", "type": "類型", "description": "結合行業背景的詳細說明(請提供5個)"}],\n  "investors": [{"name": "該行業活躍的機構或人", "type": "類型", "description": "活躍領域"}]\n}`;
+
+            const res = await fetch('/api/assessment/oversea-analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt,
+                    systemPrompt: '你是國際商業數據分析師，請結合企業的行業背景提供針對性的渠道和夥伴建議。必須返回標準的JSON數據，數字部分不得包含中文單位或文字。',
+                    config: aiConfig
+                })
+            });
+            const result = await res.json();
+            let content = result.content.trim();
+
+            // JSON 修復邏輯
+            content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+            const start = content.indexOf('{');
+            const end = content.lastIndexOf('}');
+            if (start !== -1 && end !== -1) {
+                content = content.substring(start, end + 1);
+            }
+            content = content.replace(/:\s*約(\d+)/g, ': $1');
+
+            const data = JSON.parse(content);
+
+            // 自動計算人均 GDP
+            let gdpPerCapita = '-';
+            const popNum = data.populationNumber ? parseFloat(String(data.populationNumber).replace(/[^\d.]/g, '')) : 0;
+            const gdpVal = data.gdpValue ? parseFloat(String(data.gdpValue).replace(/[^\d.]/g, '')) : 0;
+            const gdpUnit = data.gdpUnit || '貨幣';
+
+            if (popNum > 0 && gdpVal > 0) {
+                const perCapita = gdpVal / popNum;
+                gdpPerCapita = perCapita.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' ' + gdpUnit;
+            }
+            data.gdpPerCapitaDisplay = gdpPerCapita;
+
+            setCountryDetails(data);
+        } catch (err: any) {
+            console.error('解析國家詳情失敗:', err);
+            setError('獲取國家詳情失敗：' + err.message);
+        } finally {
+            setIsCountryLoading(false);
+        }
+    };
+
+    const handleRunAiMatch = async () => {
+        setIsMatching(true);
+        setMatchResults(null);
+        try {
+            const industry = companyInfo.industry === 'tech' ? '智能科技' : companyInfo.industry === 'manufacturing' ? '高端製造' : '機器人';
+            const scInfo = overseaScorecards.map(s => `${s.name}: ${s.score}/100`).join('，');
+            const prompt = `分析行業為 ${industry} 的企業出海，評估數據：${scInfo}。請分析該企業最適合出海的5個國家並返回純JSON：{ "matches": [{ "country": "國家名", "matchPercentage": 數字, "reasons": ["原因1", "原因2"] }] }`;
+
+            const res = await fetch('/api/assessment/oversea-analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt,
+                    systemPrompt: '你是國際市場戰略分析師，專注於中國企業出海策略。必須返回標準的JSON格式，不要包含任何文字說明。',
+                    config: aiConfig
+                })
+            });
+            const result = await res.json();
+            let cleaned = result.content.trim();
+            cleaned = cleaned.replace(/```json/g, '').replace(/```/g, '').trim();
+            const start = cleaned.indexOf('{');
+            const end = cleaned.lastIndexOf('}');
+            if (start !== -1 && end !== -1) {
+                cleaned = cleaned.substring(start, end + 1);
+            }
+            const data = JSON.parse(cleaned);
+            setMatchResults(data.matches || []);
+        } catch (err) {
+            setError('AI 匹配失敗');
+        } finally {
+            setIsMatching(false);
+        }
+    };
+
+    const handleSendOverseaChat = async () => {
+        if (!chatInput.trim()) return;
+        const msg = chatInput;
+        setChatInput('');
+        setOverseaChatMessages(prev => [...prev, { role: 'user', content: msg }]);
+        setIsChatLoading(true);
+        try {
+            const industry = companyInfo.industry === 'tech' ? '智能科技' : companyInfo.industry === 'manufacturing' ? '高端製造' : '機器人';
+            const res = await fetch('/api/assessment/oversea-analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: msg,
+                    systemPrompt: `你是專業的企業出海顧問。公司：${companyInfo.companyName}，行業：${industry}。請用清晰格式回答，重點整理文字、圖表、表格。`,
+                    config: aiConfig
+                })
+            });
+            const data = await res.json();
+            setOverseaChatMessages(prev => [...prev, { role: 'ai', content: data.content }]);
+        } catch (err) {
+            setError('回覆失敗');
+        } finally {
+            setIsChatLoading(false);
+        }
     };
 
     const radarOptions = {
@@ -1225,20 +1436,174 @@ function EvaluateContent() {
                     <h3>🌐 海外市场评估系统</h3>
                     <button className="tool-panel-close" onClick={() => setActiveToolPanel(null)}>&times;</button>
                 </div>
-                <div id="overseaContent">
+                <div id="overseaContent" style={{ position: 'relative', minHeight: '400px' }}>
+                    {isOverseaLoading && (
+                        <div className="tool-loading" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(255,255,255,0.9)', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            <div className="spinner"></div>
+                            <p>正在生成 {companyInfo.companyName || '企業'} 出海優劣勢綜合評估...</p>
+                        </div>
+                    )}
                     <div className="oversea-assess-header">
                         <div className="company-meta">
                             <h3>{companyInfo.companyName || '被评估企业'}</h3>
                             <p>📅 评估日期：{companyInfo.evaluationDate}</p>
                             <p>出海优劣势综合评估報告</p>
                         </div>
-                        <div className="oversea-score-circle" style={{ borderColor: '#00b894' }}>
-                            <span className="score-num">{assessmentResult?.finalResult?.finalScore || 0}</span>
+                        <div className="oversea-score-circle" style={{ borderColor: (assessmentResult?.overallScore || 0) >= 70 ? '#00b894' : (assessmentResult?.overallScore || 0) >= 50 ? '#fdcb6e' : '#e74c3c' }}>
+                            <span className="score-num">{Math.round(assessmentResult?.overallScore || 0)}</span>
                             <span className="score-pct">總體評分</span>
                         </div>
                     </div>
-                    <div style={{ marginTop: '15px', padding: '12px', background: '#eef2ff', borderRadius: '8px', color: '#1e40af' }}>
-                        <strong>🌐 海外市場評估：</strong>根據當前計分，企業具備良好的出海潛力。建議優先考慮東南亞或歐洲市場。
+
+                    <div className="oversea-scorecard-grid">
+                        {overseaScorecards.map(sc => (
+                            <div key={sc.id} className={`oversea-scorecard ${sc.score >= 70 ? 'sc-green' : sc.score >= 50 ? 'sc-yellow' : 'sc-red'}`} style={{ borderTopColor: sc.color }}>
+                                <div className="sc-header"><span className="sc-icon">{sc.icon}</span><span className="sc-name">{sc.name}</span></div>
+                                <div className="sc-score" style={{ color: sc.score >= 70 ? '#00b894' : sc.score >= 50 ? '#fdcb6e' : '#e74c3c' }}>{sc.score}</div>
+                                <div className="sc-bar"><div className="sc-bar-fill" style={{ width: `${sc.score}%`, backgroundColor: sc.score >= 70 ? '#00b894' : sc.score >= 50 ? '#fdcb6e' : '#e74c3c' }}></div></div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="oversea-ai-section">
+                        <h4 style={{ margin: '0 0 10px', color: '#2c3e50', fontSize: '1.2rem' }}>🔗 AI 数据库与海外市场分析</h4>
+                        <p style={{ color: '#7f8c8d', fontSize: '0.9rem', marginBottom: '15px' }}>连接 AI 数据库，获取全球市场数据、国家详细信息及智能匹配分析。</p>
+
+                        {!isAiConnected ? (
+                            <button className="oversea-btn-action btn-ai-link" onClick={handleConnectAIDatabase} disabled={isAiConnecting}>
+                                {isAiConnecting ? '正在连接...' : '🔗 連結AI數據庫'}
+                            </button>
+                        ) : (
+                            <div className="oversea-ai-status" style={{ background: '#d4edda', color: '#155724', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>
+                                ✅ AI数据库连接成功！请选择市场地区。
+                            </div>
+                        )}
+
+                        {isAiConnected && (
+                            <div className="oversea-ai-content">
+                                <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #e9ecef' }} />
+                                <div className="oversea-market-selects">
+                                    <div className="select-group">
+                                        <label>选择市场地区</label>
+                                        <select value={selectedRegion} onChange={e => { setSelectedRegion(e.target.value); setSelectedCountry(''); }}>
+                                            <option value="">-- 请选择地区 --</option>
+                                            {Object.keys(overseaRegionCountries).map(r => <option key={r} value={r}>{r}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="select-group">
+                                        <label>选择国家</label>
+                                        <select value={selectedCountry} onChange={e => handleCountrySelect(e.target.value)} disabled={!selectedRegion}>
+                                            <option value="">-- 請選擇國家 --</option>
+                                            {selectedRegion && overseaRegionCountries[selectedRegion].map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {isCountryLoading && <div className="loading-spinner">獲取數據中...</div>}
+                                {countryDetails && (
+                                    <div className="oversea-country-card">
+                                        <h4>📋 {countryDetails.name || selectedCountry} 詳細信息</h4>
+                                        <div className="country-info-grid">
+                                            <div className="country-info-item"><div className="ci-label">國家名稱</div><div className="ci-value">{countryDetails.name || selectedCountry}</div></div>
+                                            <div className="country-info-item"><div className="ci-label">首都</div><div className="ci-value">{countryDetails.capital || '-'}</div></div>
+                                            <div className="country-info-item"><div className="ci-label">人口數</div><div className="ci-value">{countryDetails.population || '-'}</div></div>
+                                            <div className="country-info-item"><div className="ci-label">前一年度GDP(2025年)</div><div className="ci-value">{countryDetails.gdp || '-'}</div></div>
+                                            <div className="country-info-item">
+                                                <div className="ci-label">💡 人均GDP</div>
+                                                <div className="ci-value" style={{ color: '#e67e22', fontWeight: 700 }}>{countryDetails.gdpPerCapitaDisplay || '-'}</div>
+                                            </div>
+                                        </div>
+
+                                        {countryDetails.salesChannels && countryDetails.salesChannels.length > 0 && (
+                                            <div className="country-section">
+                                                <h5>📊 主要銷售渠道占比</h5>
+                                                <table className="country-channels-table">
+                                                    <thead><tr><th>渠道名稱</th><th>類型</th><th>占比</th></tr></thead>
+                                                    <tbody>
+                                                        {countryDetails.salesChannels.map((ch: any, i: number) => (
+                                                            <tr key={i}>
+                                                                <td>{ch.name}</td>
+                                                                <td><span className={`status-badge ${ch.type === '線上' ? 'info' : 'good'}`}>{ch.type}</span></td>
+                                                                <td><strong>{ch.percentage}%</strong></td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+
+                                        {countryDetails.partners && countryDetails.partners.length > 0 && (
+                                            <div className="country-section">
+                                                <h5>🤝 主要銷售渠道與合作企業</h5>
+                                                <table className="country-channels-table">
+                                                    <thead><tr><th>名稱</th><th>類型</th><th>說明</th></tr></thead>
+                                                    <tbody>
+                                                        {countryDetails.partners.map((p: any, i: number) => (
+                                                            <tr key={i}><td><strong>{p.name}</strong></td><td>{p.type}</td><td>{p.description}</td></tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #e9ecef' }} />
+                                <button className="oversea-btn-action btn-ai-match" onClick={handleRunAiMatch} disabled={isMatching}>
+                                    {isMatching ? '計算中...' : '🤖 AI計算匹配'}
+                                </button>
+
+                                {matchResults && matchResults.length > 0 && (
+                                    <div className="oversea-match-results">
+                                        <h4 style={{ margin: '15px 0 12px', color: '#2c3e50' }}>🤖 AI匹配分析結果 — {companyInfo.companyName}</h4>
+                                        {matchResults.map((m: any, i: number) => (
+                                            <div key={i} className="match-item">
+                                                <div className="match-rank">{i + 1}</div>
+                                                <div className="match-info">
+                                                    <div className="match-country">{m.country}</div>
+                                                    <div className="match-reasons">{m.reasons ? m.reasons.join(' | ') : ''}</div>
+                                                </div>
+                                                <div className="match-pct">
+                                                    <div className="pct-num">{m.matchPercentage}%</div>
+                                                    <div className="pct-bar"><div className="pct-bar-fill" style={{ width: `${m.matchPercentage}%` }}></div></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="oversea-chat-section" style={{ marginTop: '25px' }}>
+                                    <h4>💬 咨询AI海外顾问</h4>
+                                    <div className="oversea-chat-messages" style={{ height: '300px', overflowY: 'auto', border: '1px solid #eee', padding: '15px', borderRadius: '12px', marginBottom: '10px', background: '#f9fafb' }}>
+                                        {overseaChatMessages.length === 0 && <p style={{ color: '#bbb', textAlign: 'center', marginTop: '100px' }}>连接AI數据庫後，您可以在此輸入任何問題進行咨詢</p>}
+                                        {overseaChatMessages.map((m, idx) => (
+                                            <div key={idx} className={`chat-msg ${m.role === 'user' ? 'user' : 'ai'}`} style={{ marginBottom: '15px' }}>
+                                                <div className="msg-bubble" style={{
+                                                    padding: '12px 16px',
+                                                    borderRadius: '12px',
+                                                    background: m.role === 'user' ? '#00b894' : '#fff',
+                                                    color: m.role === 'user' ? 'white' : '#2c3e50',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                                    border: m.role === 'ai' ? '1px solid #e5e7eb' : 'none'
+                                                }} dangerouslySetInnerHTML={{ __html: m.role === 'ai' ? formatOverseaAIText(m.content) : m.content }}>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {isChatLoading && <div className="chat-loading" style={{ color: '#64748b', fontSize: '0.9rem' }}><span className="mini-spinner"></span> AI 思考中...</div>}
+                                    </div>
+                                    <div className="oversea-chat-input" style={{ display: 'flex', gap: '8px' }}>
+                                        <textarea
+                                            value={chatInput}
+                                            onChange={e => setChatInput(e.target.value)}
+                                            placeholder="輸入您的問題..."
+                                            style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid #ddd' }}
+                                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendOverseaChat(); } }}
+                                        />
+                                        <button onClick={handleSendOverseaChat} style={{ padding: '0 20px', background: '#00b894', color: 'white', borderRadius: '8px', border: 'none' }}>發送</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
