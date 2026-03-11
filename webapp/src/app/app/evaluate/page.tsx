@@ -460,7 +460,9 @@ function EvaluateContent() {
         const newValues = { ...values };
         if (demo.scores) {
             Object.keys(demo.scores).forEach((id: string) => {
-                newValues[id] = (demo.scores as any)[id];
+                const metricData = (demo.scores as any)[id];
+                // 如果是包含 value 的對象則提取 value，否則如果是數字直接使用
+                newValues[id] = typeof metricData === 'object' && metricData !== null ? metricData.value : metricData;
             });
             setValues(newValues);
         }
@@ -472,6 +474,7 @@ function EvaluateContent() {
 
         if (demo.scores) {
             setValues(newValues);
+            silentCalculate(newValues); // 載入示例時立即更新背後的 7 大色塊分數
         }
 
         setTimeout(() => {
