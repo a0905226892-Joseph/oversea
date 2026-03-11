@@ -1780,8 +1780,9 @@ function EvaluateContent() {
                                         <tr>
                                             <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', color: '#475569' }}>评估指标</th>
                                             <th style={{ padding: '16px', textAlign: 'center', width: '220px', fontSize: '13px', color: '#475569' }}>当前数值</th>
-                                            <th style={{ padding: '16px', textAlign: 'center', width: '100px', fontSize: '13px', color: '#475569' }}>权重(%)</th>
-                                            <th style={{ padding: '16px', textAlign: 'center', width: '100px', fontSize: '13px', color: '#475569' }}>原始得分</th>
+                                            <th style={{ padding: '16px', textAlign: 'center', width: '80px', fontSize: '13px', color: '#475569' }}>评分</th>
+                                            <th style={{ padding: '16px', textAlign: 'center', width: '80px', fontSize: '13px', color: '#475569' }}>权重(%)</th>
+                                            <th style={{ padding: '16px', textAlign: 'center', width: '80px', fontSize: '13px', color: '#475569' }}>计分</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1815,11 +1816,18 @@ function EvaluateContent() {
                                                     />
                                                 </td>
                                                 <td style={{ padding: '20px 16px', textAlign: 'center' }}>
-                                                    <input type="number" className="form-input" style={{ width: '60px', textAlign: 'center' }} defaultValue={1.0} readOnly />
+                                                    <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', fontSize: '14px', color: '#475569', border: '1px solid #e2e8f0' }}>
+                                                        {(assessmentResult?.metricResults[m.id]?.score || liveAssessmentResult.metricResults[m.id]?.score || 0)}
+                                                    </div>
                                                 </td>
                                                 <td style={{ padding: '20px 16px', textAlign: 'center' }}>
-                                                    <div style={{ background: '#f1f5f9', padding: '10px', borderRadius: '8px', fontWeight: 800, color: 'var(--primary)' }}>
-                                                        {assessmentResult?.metricResults[m.id]?.score || 0}
+                                                    <div style={{ fontSize: '14px', color: '#64748b' }}>
+                                                        {m.weight.toFixed(1)}
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '20px 16px', textAlign: 'center' }}>
+                                                    <div style={{ background: 'rgba(52, 152, 219, 0.1)', padding: '10px', borderRadius: '8px', fontWeight: 800, color: 'var(--primary)' }}>
+                                                        {(assessmentResult?.metricResults[m.id]?.points || liveAssessmentResult.metricResults[m.id]?.points || 0).toFixed(1)}
                                                     </div>
                                                 </td>
                                             </tr>
