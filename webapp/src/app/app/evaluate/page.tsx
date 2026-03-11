@@ -104,6 +104,33 @@ function EvaluateContent() {
     const [assessmentResult, setAssessmentResult] = useState<any>(null)
     const [aiResult, setAiResult] = useState<any>(null)
 
+    // 擴展工具數據 (稅務、專利、投資)
+    const [toolsData, setToolsData] = useState<any>({
+        tax: {
+            id: "91310000MA1FL8XX42", level: "A级", comment: "连续3年A级", total: "2,856万", change: "↑ 23.5% 同比增长", vat: "1,820万", income: "680万", benefit: "高新技术企业 (15%税率)",
+            history: [
+                { year: "2025", vat: "1,820万", income: "680万", other: "356万", total: "2,856万", level: "A级" },
+                { year: "2024", vat: "1,540万", income: "518万", other: "254万", total: "2,312万", level: "A级" },
+                { year: "2023", vat: "1,280万", income: "425万", other: "195万", total: "1,900万", level: "A级" }
+            ],
+            conclusion: "该企业纳税信用良好，合规性优秀。"
+        },
+        patent: {
+            total: 47, invention: 23, utility: 16, design: 8, pct: 5, index: 8.6,
+            topList: [
+                { name: "基于AI的数据分析方法", type: "发明专利", date: "2024-03-15", status: "已授权", count: 32 }
+            ],
+            conclusion: "该企业专利布局初步成型。"
+        },
+        invest: {
+            rating: "A", valuation: "5 - 8 亿", rank: "Top 20%", heat: 75,
+            agencies: [
+                { name: "示例机构", score: 80, grade: "推荐", focus: "关注市场增长", date: "2026-02-12" }
+            ],
+            conclusion: "企业具备一定投资价值。"
+        }
+    })
+
     // --- 初始化加載 ---
     useEffect(() => {
         mermaid.initialize({
@@ -176,12 +203,18 @@ function EvaluateContent() {
                 companyName: "智创科技有限公司",
                 industry: "tech",
                 fundingStage: "a",
-                capital: "10000",
-                paidIn: "5000",
-                date: "2023-05-18",
-                code: "91310115MA1H8U7X2L",
-                address: "上海市浦东新区张江高科技园区科苑路88号",
-                scope: "智能科技领域内的技术开发、技术咨询、技术服务、技术转让；电子产品生产销售；AI算力服务、人工智能服务器设计、个人AI助理终端开发销售。",
+                evaluationDate: "2023-05-18",
+                registeredCapital: "10000",
+                paidInCapital: "5000",
+                unifiedCreditCode: "91310115MA1H8U7X2L",
+                companyAddress: "上海市浦东新区张江高科技园区科苑路88号",
+                businessScope: "智能科技领域内的技术开发、技术咨询、技术服务、技术转让；电子产品生产销售；AI算力服务、人工智能服务器设计、个人AI助理终端开发銷售。",
+                chairmanName: "王智强",
+                gmName: "李林",
+                legalRepresentative: "王智强",
+                supervisorName: "张华",
+                boardMembers: "王智强、李林、张华",
+                executives: "王智强、李林、张华、徐博、周洁",
                 shareholders: [
                     { name: "王智强 (创始人)", percentage: 35, subscribed: 3500, amount: 3500, type: "common" },
                     { name: "李林 (联合创始人)", percentage: 15, subscribed: 1500, amount: 1500, type: "common" },
@@ -189,18 +222,6 @@ function EvaluateContent() {
                     { name: "红杉智投 (机构股东)", percentage: 25, subscribed: 2500, amount: 2500, type: "preferred" },
                     { name: "节点资本 (机构股东)", percentage: 20, subscribed: 2000, amount: 2000, type: "preferred" }
                 ],
-                investorName: "红杉智投",
-                investorPaidCapital: "2500",
-                governance: {
-                    chairman: "王智强",
-                    gm: "李林",
-                    legalRep: "王智强",
-                    supervisor: "张华",
-                    boardMembers: "王智强、李林、张华",
-                    executives: "王智强、李林、张华、徐博、周洁",
-                    investmentLead: "徐博",
-                    opsLead: "周洁"
-                },
                 products: [
                     { name: "智能决策引擎 Alpha-1", type: "软件系统", model: "ToB", price: 45, cost: 12, date: "2025-05-15" },
                     { name: "实时数据流处理器", type: "中间件", model: "ToB", price: 28, cost: 8, date: "2024-11-20" },
@@ -222,18 +243,58 @@ function EvaluateContent() {
                     "business_model": 8.5, "corporate_governance": 7, "risk_management": 7, "succession_plan": 5, "csr": 7, "esg_score": 7.5, "innovation_culture": 9, "strategic_partnerships": 7,
                     "long_term_vision": 8, "sustainable_growth": 45, "market_expansion": 8, "product_pipeline": 8, "talent_attraction": 8, "climate_impact": 8, "resource_efficiency": 7.5,
                     "community_engagement": 6, "adaptability": 8.5, "reputation_management": 7, "future_readiness": 9
+                },
+                toolsData: {
+                    tax: {
+                        id: "91310115MA1H8U7X2L", level: "A级", comment: "连续3年A级", total: "2,856万", change: "↑ 23.5% 同比增长", vat: "1,820万", income: "680万", benefit: "高新技术企业 (15%税率)",
+                        history: [
+                            { year: "2025", vat: "1,820万", income: "680万", other: "356万", total: "2,856万", level: "A级" },
+                            { year: "2024", vat: "1,540万", income: "518万", other: "254万", total: "2,312万", level: "A级" },
+                            { year: "2023", vat: "1,280万", income: "425万", other: "195万", total: "1,900万", level: "A级" }
+                        ],
+                        conclusion: "该企业纳税信用良好，连续3年A级信用，纳税额稳步增长，享受高新技术企业税收优惠，税务合规性优秀。"
+                    },
+                    patent: {
+                        total: 47, invention: 23, utility: 16, design: 8, pct: 5, index: 8.6,
+                        topList: [
+                            { name: "基于深度学习的智能数据分析方法", type: "发明专利", date: "2024-03-15", status: "已授权", count: 32 },
+                            { name: "分布式计算架构优化系统", type: "发明专利", date: "2024-06-22", status: "已授权", count: 28 },
+                            { name: "多模态数据融合处理裝置", type: "发明专利", date: "2024-09-10", status: "实审", count: 15 },
+                            { name: "个人AI助手自然语言交互邏輯", type: "发明专利", date: "2024-11-20", status: "公开", count: 10 },
+                            { name: "低功耗边缘識別算法", type: "发明专利", date: "2025-01-12", status: "公开", count: 6 }
+                        ],
+                        conclusion: "该企业专利布局完善，发明专利占比超50%，核心专利被引用次数显著，技术创新实力處于行业領先水平。"
+                    },
+                    invest: {
+                        rating: "A+", valuation: "8.5 - 12.3 亿", rank: "Top 15%", heat: 87.5,
+                        agencies: [
+                            { name: "红杉资本评估系統", score: 88, grade: "强烈推荐", focus: "技術壁垒高，团队執行力強", date: "2026-02-10" },
+                            { name: "经纬创投評估模型", score: 86, grade: "强烈推荐", focus: "市場滲透策略清晰，用户粘性高", date: "2026-02-15" },
+                            { name: "源码资本評分系統", score: 84, grade: "推荐", focus: "底层架構領先，行业适配度高", date: "2026-02-18" },
+                            { name: "IDG資本評估模型", score: 85, grade: "推荐", focus: "商业模式閉環，单位經濟效益優", date: "2026-02-08" },
+                            { name: "深創投評分系統", score: 82, grade: "推荐", focus: "符合国家产业导向，资本效率高", date: "2026-02-05" },
+                            { name: "启明创投評估系統", score: 83, grade: "推荐", focus: "研发投入佔比合理，创新持续性強", date: "2026-02-20" }
+                        ],
+                        conclusion: "该企業獲得多家主流機構高評分，估值區間合理。重点优势：技術壁垒高、赛道增长空间大。"
+                    }
                 }
             },
             manufacturing: {
                 companyName: "环球重工集团有限公司",
                 industry: "manufacturing",
                 fundingStage: "ipo",
-                capital: "200000",
-                paidIn: "180000",
-                date: "2010-03-12",
-                code: "91110108MA002Y6T5G",
-                address: "北京市经济技术开发区荣华南路15号院汇龙森工业园",
-                scope: "重型机械设备、工程机械、矿山机械、港口机械、冶金机械及其备件的研发、制造、销售、租赁；工业自动化系统集成；货物进出口、技术进出口。",
+                evaluationDate: "2010-03-12",
+                registeredCapital: "200000",
+                paidInCapital: "180000",
+                unifiedCreditCode: "91110108MA002Y6T5G",
+                companyAddress: "北京市经济技术开发区荣华南路15号院汇龙森工业园",
+                businessScope: "重型机械设备、工程机械、矿山机械、港口机械、冶金机械及其备件的研发、制造、销售、租赁；工业自动化系统集成；货物进出口、技术进出口。",
+                chairmanName: "陈建国",
+                gmName: "林峰",
+                legalRepresentative: "陈建国",
+                supervisorName: "赵毅",
+                boardMembers: "陈建国、林峰、赵毅、金伟、吴刚",
+                executives: "陈建国、林峰、赵毅、孙明、周泰",
                 shareholders: [
                     { name: "环球产业控股集团", percentage: 45, subscribed: 90000, amount: 90000, type: "common" },
                     { name: "国家产业引导基金", percentage: 20, subscribed: 40000, amount: 40000, type: "preferred" },
@@ -242,18 +303,6 @@ function EvaluateContent() {
                     { name: "赵毅 (核心高管)", percentage: 5, subscribed: 10000, amount: 10000, type: "common" },
                     { name: "公众及其他股东", percentage: 10, subscribed: 20000, amount: 10000, type: "common" }
                 ],
-                investorName: "国家产业引导基金",
-                investorPaidCapital: "40000",
-                governance: {
-                    chairman: "陈建国",
-                    gm: "林峰",
-                    legalRep: "陈建国",
-                    supervisor: "赵毅",
-                    boardMembers: "陈建国、林峰、赵毅、金伟、吴刚",
-                    executives: "陈建国、林峰、赵毅、孙明、周泰",
-                    investmentLead: "孙明",
-                    opsLead: "周泰"
-                },
                 products: [
                     { name: "超大型全液压挖掘机 GX900", type: "工程机械", model: "ToB", price: 1200, cost: 750, date: "2024-06-15" },
                     { name: "数字化矿山综合管控平台", type: "软件系统", model: "ToB", price: 450, cost: 120, date: "2024-01-20" },
@@ -275,33 +324,61 @@ function EvaluateContent() {
                     "business_model": 9.2, "corporate_governance": 9.5, "risk_management": 9.2, "succession_plan": 8.5, "csr": 9.0, "esg_score": 8.8, "innovation_culture": 8.5, "strategic_partnerships": 9.2,
                     "long_term_vision": 9.5, "sustainable_growth": 15, "market_expansion": 8.8, "product_pipeline": 15, "talent_attraction": 9.2, "climate_impact": 9.0, "resource_efficiency": 8.5,
                     "community_engagement": 8.2, "adaptability": 8.8, "reputation_management": 9.2, "future_readiness": 9.5
+                },
+                toolsData: {
+                    tax: {
+                        id: "91110108MA002Y6T5G", level: "A级", comment: "大额纳税标杆", total: "1.85 亿", change: "↑ 12.1% 同比增长", vat: "1.12 亿", income: "4,500万", benefit: "高端装备制造退税",
+                        history: [
+                            { year: "2025", vat: "1.12亿", income: "4,500万", other: "2,800万", total: "1.85亿", level: "A级" },
+                            { year: "2024", vat: "9,800万", income: "3,950万", other: "2,250万", total: "1.60亿", level: "A级" },
+                            { year: "2023", vat: "8,500万", income: "3,500万", other: "2,000万", total: "1.40亿", level: "A级" }
+                        ],
+                        conclusion: "该企业属于地方支柱性工业企业，纳税贡献巨大，财务制度非常健全，连续多年获评纳税信用A级。"
+                    },
+                    patent: {
+                        total: 352, invention: 115, utility: 210, design: 27, pct: 24, index: 7.2,
+                        topList: [
+                            { name: "超大型全液压挖掘机能量回收系统", type: "发明专利", date: "2022-05-10", status: "已授权", count: 68 },
+                            { name: "重型机械数字化控制底座", type: "辅助专利", date: "2023-01-15", status: "已授权", count: 45 },
+                            { name: "一种矿山机器人自动避障邏輯", type: "发明专利", date: "2023-08-22", status: "已授权", count: 39 }
+                        ],
+                        conclusion: "该企业拥有深厚的重工業技術積累，在核心機械結構和液壓系統上有極強壁壘。"
+                    },
+                    invest: {
+                        rating: "B+", valuation: "45 - 60 亿", rank: "Top 25%", heat: 65.2,
+                        agencies: [
+                            { name: "国家制造業基金評估", score: 92, grade: "强烈推荐", focus: "产业核心安全，国产替代空间大", date: "2026-01-15" },
+                            { name: "鼎晖投資評估模型", score: 84, grade: "推荐", focus: "固定資產利用率高，行业龙头地位稳固", date: "2026-02-01" },
+                            { name: "高瓴資本分析系統", score: 83, grade: "推荐", focus: "供应链整合能力強，具備规模效應", date: "2026-02-05" },
+                            { name: "中金公司評估模型", score: 81, grade: "推荐", focus: "财务透明度高，现金流表现稳健", date: "2026-01-20" },
+                            { name: "国投创新評分系統", score: 88, grade: "推荐", focus: "制造工藝領先，符合智能化转型趨勢", date: "2026-02-10" },
+                            { name: "弘毅投資評估系統", score: 79, grade: "推荐", focus: "海外訂單增长潜力，品牌議價能力", date: "2026-02-12" }
+                        ],
+                        conclusion: "资产负債率適中，股息率有吸引力。属于稳健型投資标的，受宏观基建政策影响較大。"
+                    }
                 }
             },
             robot: {
                 companyName: "灵动机器人有限公司",
                 industry: "robot",
                 fundingStage: "seed",
-                capital: "1500",
-                paidIn: "750",
-                date: "2024-01-01",
-                code: "91320594MA27X9Y41N",
-                address: "苏州市工业园区星湖街218号",
-                scope: "机器人本体、核心零部件、控制系统、人工智能算法的研发、生产、销售及技术服务。",
+                evaluationDate: "2024-01-01",
+                registeredCapital: "1500",
+                paidInCapital: "750",
+                unifiedCreditCode: "91320594MA27X9Y41N",
+                companyAddress: "苏州市工业园区星湖街218号",
+                businessScope: "机器人本体、核心零部件、控制系统、人工智能算法的研发、生产、销售及技术服务。",
+                chairmanName: "张强",
+                gmName: "李明",
+                legalRepresentative: "张强",
+                supervisorName: "王芳",
+                boardMembers: "张强、李明、王芳",
+                executives: "张强、李明",
                 shareholders: [
                     { name: "张强 (创始人)", percentage: 70, subscribed: 1050, amount: 600, type: "common" },
                     { name: "李明 (技术合伙人)", percentage: 20, subscribed: 300, amount: 150, type: "common" },
                     { name: "王芳 (天使投资人)", percentage: 10, subscribed: 150, amount: 50, type: "preferred" }
                 ],
-                investorName: "王芳",
-                investorPaidCapital: "50",
-                governance: {
-                    chairman: "张强",
-                    gm: "李明",
-                    legalRep: "张强",
-                    supervisor: "王芳",
-                    boardMembers: "张强、李明、王芳",
-                    executives: "张强、李明"
-                },
                 products: [
                     { name: "基础型减速机样机", type: "零组件", model: "ToB", price: 0.12, cost: 0.10, date: "2026-03-01" }
                 ],
@@ -321,6 +398,36 @@ function EvaluateContent() {
                     "business_model": 7.5, "corporate_governance": 5.5, "risk_management": 6.0, "succession_plan": 3.5, "csr": 4.5, "esg_score": 5.5, "innovation_culture": 8.5, "strategic_partnerships": 5.5,
                     "long_term_vision": 8.5, "sustainable_growth": 45, "market_expansion": 7.5, "product_pipeline": 4, "talent_attraction": 8.0, "climate_impact": 7.5, "resource_efficiency": 6.5,
                     "community_engagement": 5.0, "adaptability": 8.5, "reputation_management": 6.5, "future_readiness": 8.0
+                },
+                toolsData: {
+                    tax: {
+                        id: "91320594MA27X9Y41N", level: "B级", comment: "处于积累期", total: "156万", change: "↑ 15.2% 同比增长", vat: "95万", income: "15万", benefit: "小微企业研发加计扣除",
+                        history: [
+                            { year: "2025", vat: "95万", income: "15万", other: "46万", total: "156万", level: "B级" },
+                            { year: "2024", vat: "82万", income: "10万", other: "38万", total: "130万", level: "B级" }
+                        ],
+                        conclusion: "企业处于初创期，纳税额较小，纳税信用等级处于上升阶段。主要享受普惠性税收政策。"
+                    },
+                    patent: {
+                        total: 8, invention: 2, utility: 5, design: 1, pct: 0, index: 3.1,
+                        topList: [
+                            { name: "一种微型移动关节结构", type: "实用新型", date: "2024-10-05", status: "已授权", count: 4 },
+                            { name: "机器人視覺識別輔助算法", type: "发明专利", date: "2024-12-15", status: "公開", count: 2 }
+                        ],
+                        conclusion: "专利储备严重不足，核心知識產權尚未形成閉環，面临較大的技術風險。"
+                    },
+                    invest: {
+                        rating: "C", valuation: "3500 - 5000 万", rank: "Bottom 30%", heat: 32.5,
+                        agencies: [
+                            { name: "真格基金評估模型", score: 75, grade: "积极", focus: "创始人背景極佳，處於關鍵原型期", date: "2026-02-10" },
+                            { name: "联想之星評分系統", score: 68, grade: "观察", focus: "技術路徑具有独特性，需验证量產可能", date: "2026-02-05" },
+                            { name: "梅花创投評估系統", score: 70, grade: "积极", focus: "赛道天花板高，先發优势明显", date: "2026-02-12" },
+                            { name: "本地孵化器模型", score: 62, grade: "观察", focus: "核心团队研发能力強，缺乏商业化人才", date: "2026-01-30" },
+                            { name: "经纬创投初評", score: 55, grade: "审慎", focus: "技术壁垒尚未形成，后期资金需求巨大", date: "2026-02-15" },
+                            { name: "顺为资本分析模型", score: 60, grade: "观察", focus: "硬件成本控制能力待考，生态协同性尚可", date: "2026-02-20" }
+                        ],
+                        conclusion: "目前风险收益比極度不平衡，建议企業先聚焦於核心產品的原型验证。"
+                    }
                 }
             }
         };
@@ -336,35 +443,40 @@ function EvaluateContent() {
         });
 
         setDeepData({
-            registeredCapital: demo.capital || '',
-            paidInCapital: demo.paidIn || '',
+            registeredCapital: demo.registeredCapital || '',
+            paidInCapital: demo.paidInCapital || '',
             investorName: demo.investorName || '',
             investorPaidCapital: demo.investorPaidCapital || '',
-            chairmanName: demo.governance?.chairman || '',
-            gmName: demo.governance?.gm || '',
-            legalRepresentative: demo.governance?.legalRep || '',
-            investmentDecisionMaker: demo.governance?.investmentLead || '',
-            operationManager: demo.governance?.opsLead || '',
-            supervisorName: demo.governance?.supervisor || '',
-            boardMembers: demo.governance?.boardMembers || '',
-            executives: demo.governance?.executives || '',
-            establishmentDate: demo.date || '',
-            unifiedCreditCode: demo.code || '',
-            companyAddress: demo.address || '',
-            businessScope: demo.scope || ''
+            chairmanName: demo.chairmanName || '',
+            gmName: demo.gmName || '',
+            legalRepresentative: demo.legalRepresentative || '',
+            investmentDecisionMaker: demo.investmentDecisionMaker || '',
+            operationManager: demo.operationManager || '',
+            supervisorName: demo.supervisorName || '',
+            boardMembers: demo.boardMembers || '',
+            executives: demo.executives || '',
+            establishmentDate: demo.evaluationDate || '',
+            unifiedCreditCode: demo.unifiedCreditCode || '',
+            companyAddress: demo.companyAddress || '',
+            businessScope: demo.businessScope || ''
         });
 
         const newValues = { ...values };
-        Object.keys(demo.scores).forEach((id: string) => {
-            newValues[id] = (demo.scores as any)[id];
-        });
-        setValues(newValues);
+        if (demo.scores) {
+            Object.keys(demo.scores).forEach((id: string) => {
+                newValues[id] = (demo.scores as any)[id];
+            });
+            setValues(newValues);
+        }
 
         setShareholders(demo.shareholders);
         setProducts(demo.products);
+        if (demo.toolsData) setToolsData(demo.toolsData);
         setIsDemoLoaded(true);
 
-        silentCalculate(newValues);
+        if (demo.scores) {
+            silentCalculate(newValues);
+        }
 
         setTimeout(() => {
             generateMermaidChart();
@@ -1025,24 +1137,24 @@ function EvaluateContent() {
                 </div>
                 <div id="taxContent">
                     <div className="tool-data-grid">
-                        <div className="tool-data-card"><div className="card-label">纳税人识别号</div><div className="card-value" style={{ fontSize: '0.9rem' }}>91310000MA1FL8XX42</div></div>
-                        <div className="tool-data-card"><div className="card-label">纳税信用等级</div><div className="card-value" style={{ color: '#00b894' }}>A级</div><div className="card-change positive">连续3年A级</div></div>
-                        <div className="tool-data-card"><div className="card-label">本年度纳税总额</div><div className="card-value">¥ 2,856万</div><div className="card-change positive">↑ 23.5% 同比增长</div></div>
-                        <div className="tool-data-card"><div className="card-label">增值税纳税额</div><div className="card-value">¥ 1,820万</div></div>
-                        <div className="tool-data-card"><div className="card-label">企业所得税</div><div className="card-value">¥ 680万</div></div>
-                        <div className="tool-data-card"><div className="card-label">税收政策</div><div className="card-value" style={{ color: '#6c5ce7', fontSize: '0.9rem' }}>高新技术企业 (15%税率)</div></div>
+                        <div className="tool-data-card"><div className="card-label">纳税人识别号</div><div className="card-value" style={{ fontSize: '0.9rem' }}>{toolsData.tax.id}</div></div>
+                        <div className="tool-data-card"><div className="card-label">纳税信用等级</div><div className="card-value" style={{ color: '#00b894' }}>{toolsData.tax.level}</div><div className="card-change positive">{toolsData.tax.comment}</div></div>
+                        <div className="tool-data-card"><div className="card-label">本年度纳税总额</div><div className="card-value">¥ {toolsData.tax.total}</div><div className="card-change positive">{toolsData.tax.change}</div></div>
+                        <div className="tool-data-card"><div className="card-label">增值税纳税额</div><div className="card-value">¥ {toolsData.tax.vat}</div></div>
+                        <div className="tool-data-card"><div className="card-label">企业所得税</div><div className="card-value">¥ {toolsData.tax.income}</div></div>
+                        <div className="tool-data-card"><div className="card-label">税收政策</div><div className="card-value" style={{ color: '#6c5ce7', fontSize: '0.9rem' }}>{toolsData.tax.benefit}</div></div>
                     </div>
                     <h4 style={{ margin: '20px 0 10px', color: '#2c3e50' }}>📑 近三年纳税明细</h4>
                     <table className="tool-table">
                         <thead><tr><th>年度</th><th>增值税</th><th>企业所得税</th><th>其他税费</th><th>合计</th><th>信用等级</th></tr></thead>
                         <tbody>
-                            <tr><td><strong>2025</strong></td><td>1,820万</td><td>680万</td><td>356万</td><td><strong>2,856万</strong></td><td><span className="status-badge good">A级</span></td></tr>
-                            <tr><td><strong>2024</strong></td><td>1,540万</td><td>518万</td><td>254万</td><td><strong>2,312万</strong></td><td><span className="status-badge good">A级</span></td></tr>
-                            <tr><td><strong>2023</strong></td><td>1,280万</td><td>425万</td><td>195万</td><td><strong>1,900万</strong></td><td><span className="status-badge good">A级</span></td></tr>
+                            {toolsData.tax.history.map((h: any, idx: number) => (
+                                <tr key={idx}><td><strong>{h.year}</strong></td><td>{h.vat}</td><td>{h.income}</td><td>{h.other}</td><td><strong>{h.total}</strong></td><td><span className="status-badge good">{h.level}</span></td></tr>
+                            ))}
                         </tbody>
                     </table>
                     <div style={{ marginTop: '15px', padding: '12px', background: '#d4edda', borderRadius: '8px', color: '#155724' }}>
-                        <strong>✅ 税务评估结论：</strong>该企业纳税信用良好，合规性优秀。
+                        <strong>✅ 税务评估结论：</strong>{toolsData.tax.conclusion}
                     </div>
                 </div>
             </div>
@@ -1055,21 +1167,23 @@ function EvaluateContent() {
                 </div>
                 <div id="patentContent">
                     <div className="tool-data-grid">
-                        <div className="tool-data-card"><div className="card-label">专利总数</div><div className="card-value" style={{ color: '#6c5ce7' }}>47 项</div></div>
-                        <div className="tool-data-card"><div className="card-label">发明专利</div><div className="card-value">23 项</div></div>
-                        <div className="tool-data-card"><div className="card-label">实用新型</div><div className="card-value">16 项</div></div>
-                        <div className="tool-data-card"><div className="card-label">PCT国际专利</div><div className="card-value" style={{ color: '#e17055' }}>5 项</div></div>
-                        <div className="tool-data-card"><div className="card-label">专利引用指数</div><div className="card-value" style={{ color: '#00b894' }}>8.6</div></div>
+                        <div className="tool-data-card"><div className="card-label">专利总数</div><div className="card-value" style={{ color: '#6c5ce7' }}>{toolsData.patent.total} 项</div></div>
+                        <div className="tool-data-card"><div className="card-label">发明专利</div><div className="card-value">{toolsData.patent.invention} 项</div></div>
+                        <div className="tool-data-card"><div className="card-label">实用新型</div><div className="card-value">{toolsData.patent.utility} 项</div></div>
+                        <div className="tool-data-card"><div className="card-label">PCT国际专利</div><div className="card-value" style={{ color: '#e17055' }}>{toolsData.patent.pct} 项</div></div>
+                        <div className="tool-data-card"><div className="card-label">专利引用指数</div><div className="card-value" style={{ color: '#00b894' }}>{toolsData.patent.index}</div></div>
                     </div>
                     <h4 style={{ margin: '20px 0 10px', color: '#2c3e50' }}>🔍 核心专利清单</h4>
                     <table className="tool-table">
                         <thead><tr><th>专利名称</th><th>类型</th><th>申请日</th><th>状态</th><th>被引次数</th></tr></thead>
                         <tbody>
-                            <tr><td>基于AI的数据分析方法</td><td>发明专利</td><td>2024-03-15</td><td><span className="status-badge good">已授权</span></td><td><strong>32</strong></td></tr>
+                            {toolsData.patent.topList.map((p: any, idx: number) => (
+                                <tr key={idx}><td>{p.name}</td><td>{p.type}</td><td>{p.date}</td><td><span className="status-badge good">{p.status}</span></td><td><strong>{p.count}</strong></td></tr>
+                            ))}
                         </tbody>
                     </table>
                     <div style={{ marginTop: '15px', padding: '12px', background: '#e8d5f5', borderRadius: '8px', color: '#4a235a' }}>
-                        <strong>🔬 专利评估结论：</strong>该企业专利布局初步成型。
+                        <strong>🔬 专利评估结论：</strong>{toolsData.patent.conclusion}
                     </div>
                 </div>
             </div>
@@ -1084,21 +1198,23 @@ function EvaluateContent() {
                     <div className="tool-data-grid">
                         <div className="tool-data-card" style={{ textAlign: 'center' }}>
                             <div className="card-label">综合投资评级</div>
-                            <div style={{ margin: '10px 0' }}><div className="score-ring high">A</div></div>
+                            <div style={{ margin: '10px 0' }}><div className={`score-ring ${toolsData.invest.rating.startsWith('A') ? 'high' : toolsData.invest.rating.startsWith('B') ? 'mid' : 'low'}`}>{toolsData.invest.rating}</div></div>
                         </div>
-                        <div className="tool-data-card"><div className="card-label">估值区间</div><div className="card-value">5 - 8 亿</div></div>
-                        <div className="tool-data-card"><div className="card-label">行业排名</div><div className="card-value">Top 20%</div></div>
-                        <div className="tool-data-card"><div className="card-label">投资热度指数</div><div className="card-value" style={{ color: '#e17055' }}>75</div></div>
+                        <div className="tool-data-card"><div className="card-label">估值区间</div><div className="card-value">{toolsData.invest.valuation}</div></div>
+                        <div className="tool-data-card"><div className="card-label">行业排名</div><div className="card-value">{toolsData.invest.rank}</div></div>
+                        <div className="tool-data-card"><div className="card-label">投资热度指数</div><div className="card-value" style={{ color: '#e17055' }}>{toolsData.invest.heat}</div></div>
                     </div>
                     <h4 style={{ margin: '20px 0 10px', color: '#2c3e50' }}>🏛️ 主流机构评分</h4>
                     <table className="tool-table">
                         <thead><tr><th>评分机构</th><th>评分</th><th>评级</th><th>关注要点</th><th>更新日期</th></tr></thead>
                         <tbody>
-                            <tr><td><strong>示例机构</strong></td><td><strong style={{ color: '#00b894' }}>80</strong></td><td><span className="status-badge good">推荐</span></td><td>关注市场增长</td><td>2026-02-12</td></tr>
+                            {toolsData.invest.agencies.map((a: any, idx: number) => (
+                                <tr key={idx}><td><strong>{a.name}</strong></td><td><strong style={{ color: '#00b894' }}>{a.score}</strong></td><td><span className="status-badge good">{a.grade}</span></td><td>{a.focus}</td><td>{a.date}</td></tr>
+                            ))}
                         </tbody>
                     </table>
                     <div style={{ marginTop: '15px', padding: '12px', background: '#fce4ec', borderRadius: '8px', color: '#880e4f' }}>
-                        <strong>🏦 投资机构综合评价：</strong>企业具备一定投资价值。
+                        <strong>🏦 投资机构综合评价：</strong>{toolsData.invest.conclusion}
                     </div>
                 </div>
             </div>
