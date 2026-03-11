@@ -167,7 +167,6 @@ function EvaluateContent() {
         }
     }
 
-    // --- 載入示例數據 (與原生 index_Sample.html 100% 對齊) ---
     function loadSelectedDemo(type: string) {
         setActiveDemoModal(false);
         setAiResult(null);
@@ -336,7 +335,6 @@ function EvaluateContent() {
             evaluationDate: new Date().toISOString().split('T')[0]
         });
 
-        // 更新深層數據
         setDeepData({
             registeredCapital: demo.capital || '',
             paidInCapital: demo.paidIn || '',
@@ -366,14 +364,24 @@ function EvaluateContent() {
         setProducts(demo.products);
         setIsDemoLoaded(true);
 
-        // 立即計算評分，傳入 newValues 以避開狀態更新延遲
-        handleCalculate(newValues);
+        silentCalculate(newValues);
 
-        // 自動生成圖表
         setTimeout(() => {
             generateMermaidChart();
         }, 500);
         setSuccess(`成功载入示例数据：${demo.companyName}`);
+    }
+
+    async function silentCalculate(targetValues: Record<string, number>) {
+        try {
+            const res = await fetch('/api/assessment/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ metrics: targetValues })
+            })
+            const data = await res.json()
+            if (res.ok) setAssessmentResult(data)
+        } catch (e) { }
     }
 
     async function handleCalculate(customValues?: Record<string, number>) {
@@ -388,6 +396,8 @@ function EvaluateContent() {
             const data = await res.json()
             if (!res.ok) throw new Error(data.error)
             setAssessmentResult(data)
+            setShowComprehensiveModal(true);
+            setActiveTab('结果');
             return data
         } catch (err: any) {
             setError(err.message)
