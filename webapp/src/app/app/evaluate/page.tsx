@@ -981,7 +981,7 @@ function EvaluateContent() {
 
                 <div>
                     <button id="deepInfoBtn" className="deep-info" onClick={() => setShowDeepInfo(!showDeepInfo)}>企业深度信息</button>
-                    <button id="calculateBtn" onClick={() => handleCalculate()} disabled={aiLoading || saveLoading}>计算综合评分</button>
+                    <button id="calculateBtn" onClick={() => handleCalculate()} disabled={aiLoading || saveLoading}>重新计算所有评分</button>
                     <button id="saveDataBtn" className="secondary" onClick={handleSave} disabled={isReadOnly || saveLoading}>保存数据</button>
                     <button id="loadDataBtn" className="secondary">加载数据</button>
                     <button id="demoBtn" className={`secondary ${isDemoLoaded ? 'demo-active' : ''}`} onClick={() => setActiveDemoModal(true)}>
@@ -1628,7 +1628,7 @@ function EvaluateContent() {
                                 {categoriesConfig.map(cat => (
                                     <div key={cat.id} className="modal-category-card">
                                         <div className="cat-name">{cat.name}</div>
-                                        <div className="cat-score">{(assessmentResult?.categoryScores[cat.id]?.score || liveAssessmentResult.categoryScores[cat.id]?.score || 0).toFixed(1)}</div>
+                                        <div className="cat-score">{(assessmentResult?.categoryScores[cat.id]?.points || liveAssessmentResult.categoryScores[cat.id]?.points || 0).toFixed(1)}</div>
                                         <div className="cat-weight">{(assessmentResult?.categoryScores[cat.id]?.totalWeight || liveAssessmentResult.categoryScores[cat.id]?.totalWeight || 0).toFixed(1)}%</div>
                                     </div>
                                 ))}
@@ -1717,8 +1717,8 @@ function EvaluateContent() {
                                     >
                                         <span style={{ fontSize: '28px' }}>{cfg.icon}</span>
                                         <div style={{ fontWeight: 800, fontSize: '15px', whiteSpace: 'nowrap' }}>{cat.name}</div>
-                                        <div style={{ fontSize: '22px', fontWeight: 900 }}>{(catScore?.score || 0).toFixed(1)}</div>
-                                        <div style={{ fontSize: '11px', opacity: 0.9 }}>
+                                        <div style={{ fontSize: '36px', fontWeight: 900 }}>{(catScore?.points || 0).toFixed(1)}</div>
+                                        <div style={{ fontSize: '12px', opacity: 0.9 }}>
                                             {metrics.filter(m => m.category === cat.id).length}项指标 | {(catScore?.totalWeight || 0).toFixed(1)}%权重
                                         </div>
                                     </button>
@@ -1758,8 +1758,8 @@ function EvaluateContent() {
                                     >
                                         <span style={{ fontSize: '28px' }}>{cfg.icon}</span>
                                         <div style={{ fontWeight: 800, fontSize: '15px' }}>{cat.name}</div>
-                                        <div style={{ fontSize: '22px', fontWeight: 900 }}>{(catScore?.score || 0).toFixed(1)}</div>
-                                        <div style={{ fontSize: '11px', opacity: 0.9 }}>
+                                        <div style={{ fontSize: '36px', fontWeight: 900 }}>{(catScore?.points || 0).toFixed(1)}</div>
+                                        <div style={{ fontSize: '12px', opacity: 0.9 }}>
                                             {metrics.filter(m => m.category === cat.id).length}项指标 | {(catScore?.totalWeight || 0).toFixed(1)}%权重
                                         </div>
                                     </button>
