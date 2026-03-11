@@ -45,6 +45,7 @@ function EvaluateContent() {
     const [showDeepInfo, setShowDeepInfo] = useState(false)
     const [showAiSettings, setShowAiSettings] = useState(false)
     const [activeDemoModal, setActiveDemoModal] = useState(false)
+    const [isDemoLoaded, setIsDemoLoaded] = useState(false)
     const [showComprehensiveModal, setShowComprehensiveModal] = useState(false)
     const [activeToolPanel, setActiveToolPanel] = useState<string | null>(null)
 
@@ -189,6 +190,18 @@ function EvaluateContent() {
                     { name: "红杉智投 (机构股东)", percentage: 25, subscribed: 2500, amount: 2500, type: "preferred" },
                     { name: "节点资本 (机构股东)", percentage: 20, subscribed: 2000, amount: 2000, type: "preferred" }
                 ],
+                investorName: "红杉智投",
+                investorPaidCapital: "2500",
+                governance: {
+                    chairman: "王智强",
+                    gm: "李林",
+                    legalRep: "王智强",
+                    supervisor: "张华",
+                    boardMembers: "王智强、李林、张华",
+                    executives: "王智强、李林、张华、徐博、周洁",
+                    investmentLead: "徐博",
+                    opsLead: "周洁"
+                },
                 products: [
                     { name: "智能决策引擎 Alpha-1", type: "软件系统", model: "ToB", price: 45, cost: 12, date: "2025-05-15" },
                     { name: "实时数据流处理器", type: "中间件", model: "ToB", price: 28, cost: 8, date: "2024-11-20" },
@@ -230,6 +243,18 @@ function EvaluateContent() {
                     { name: "赵毅 (核心高管)", percentage: 5, subscribed: 10000, amount: 10000, type: "common" },
                     { name: "公众及其他股东", percentage: 10, subscribed: 20000, amount: 10000, type: "common" }
                 ],
+                investorName: "国家产业引导基金",
+                investorPaidCapital: "40000",
+                governance: {
+                    chairman: "陈建国",
+                    gm: "林峰",
+                    legalRep: "陈建国",
+                    supervisor: "赵毅",
+                    boardMembers: "陈建国、林峰、赵毅、金伟、吴刚",
+                    executives: "陈建国、林峰、赵毅、孙明、周泰",
+                    investmentLead: "孙明",
+                    opsLead: "周泰"
+                },
                 products: [
                     { name: "超大型全液压挖掘机 GX900", type: "工程机械", model: "ToB", price: 1200, cost: 750, date: "2024-06-15" },
                     { name: "数字化矿山综合管控平台", type: "软件系统", model: "ToB", price: 450, cost: 120, date: "2024-01-20" },
@@ -268,6 +293,16 @@ function EvaluateContent() {
                     { name: "李明 (技术合伙人)", percentage: 20, subscribed: 300, amount: 150, type: "common" },
                     { name: "王芳 (天使投资人)", percentage: 10, subscribed: 150, amount: 50, type: "preferred" }
                 ],
+                investorName: "王芳",
+                investorPaidCapital: "50",
+                governance: {
+                    chairman: "张强",
+                    gm: "李明",
+                    legalRep: "张强",
+                    supervisor: "王芳",
+                    boardMembers: "张强、李明、王芳",
+                    executives: "张强、李明"
+                },
                 products: [
                     { name: "基础型减速机样机", type: "零组件", model: "ToB", price: 0.12, cost: 0.10, date: "2026-03-01" }
                 ],
@@ -307,14 +342,14 @@ function EvaluateContent() {
             paidInCapital: demo.paidIn || '',
             investorName: demo.investorName || '',
             investorPaidCapital: demo.investorPaidCapital || '',
-            chairmanName: demo.chairman || '',
-            gmName: demo.gm || '',
-            legalRepresentative: demo.legalRep || '',
-            investmentDecisionMaker: demo.investmentLead || '',
-            operationManager: demo.opsLead || '',
-            supervisorName: demo.supervisor || '',
-            boardMembers: demo.boardMembers || '',
-            executives: demo.executives || '',
+            chairmanName: demo.governance?.chairman || '',
+            gmName: demo.governance?.gm || '',
+            legalRepresentative: demo.governance?.legalRep || '',
+            investmentDecisionMaker: demo.governance?.investmentLead || '',
+            operationManager: demo.governance?.opsLead || '',
+            supervisorName: demo.governance?.supervisor || '',
+            boardMembers: demo.governance?.boardMembers || '',
+            executives: demo.governance?.executives || '',
             establishmentDate: demo.date || '',
             unifiedCreditCode: demo.code || '',
             companyAddress: demo.address || '',
@@ -329,6 +364,7 @@ function EvaluateContent() {
 
         setShareholders(demo.shareholders);
         setProducts(demo.products);
+        setIsDemoLoaded(true);
 
         // 立即計算評分，傳入 newValues 以避開狀態更新延遲
         handleCalculate(newValues);
@@ -435,15 +471,29 @@ function EvaluateContent() {
         setError(''); setAiLoading(true)
         try {
             // 1. 数据校验：检查是否有有效的评分结果
-            if (!assessmentResult || !assessmentResult.finalResult || assessmentResult.finalResult.finalScore === 0) {
-                throw new Error('请先输入数据或载入示例以供 AI 分析');
+            const targetResult = assessmentResult;
+            if (!targetResult || !targetResult.finalResult || targetResult.finalResult.finalScore === 0) {
+                // 嘗試立即重新計算一次
+                const recalculated = await handleCalculate();
+                if (!recalculated || recalculated.finalResult.finalScore === 0) {
+                    throw new Error('请先输入数据或载入示例以供 AI 分析');
+                }
             }
 
             // 2. 自动测试连接：检查 API Key 是否有效
-            const verifyRes = await fetch('/api/ai-lab/verify');
-            const verifyData = await verifyRes.json();
-            if (!verifyRes.ok || !verifyData.verified) {
-                throw new Error('请完成AI连接');
+            // 在開發/展示環境下，如果 api-lab 返回 404 或失效，給予明確提示
+            try {
+                const verifyRes = await fetch('/api/ai-lab/verify');
+                if (!verifyRes.ok) {
+                    throw new Error('AI 服务连接失败，请检查 API 设置');
+                }
+                const verifyData = await verifyRes.json();
+                if (!verifyData.verified) {
+                    throw new Error('请完成AI连接 (API Key 验证未通过)');
+                }
+            } catch (vErr: any) {
+                if (vErr.message.includes('API')) throw vErr;
+                throw new Error('无法连接到 AI 控制中枢，请检查网络或 API 设置');
             }
 
             const res = await fetch('/api/assessment/ai-analysis', {
@@ -627,7 +677,9 @@ function EvaluateContent() {
                     <button id="calculateBtn" onClick={() => handleCalculate()} disabled={aiLoading || saveLoading}>计算综合评分</button>
                     <button id="saveDataBtn" className="secondary" onClick={handleSave} disabled={isReadOnly || saveLoading}>保存数据</button>
                     <button id="loadDataBtn" className="secondary">加载数据</button>
-                    <button id="demoBtn" className="secondary" onClick={() => setActiveDemoModal(true)}>载入示例数据</button>
+                    <button id="demoBtn" className={`secondary ${isDemoLoaded ? 'demo-active' : ''}`} onClick={() => setActiveDemoModal(true)}>
+                        {isDemoLoaded ? '✅ 数据已载入' : '载入示例数据'}
+                    </button>
                     <button id="aiBtn" className="ai" onClick={handleAiAnalyze} disabled={aiLoading}>{aiLoading ? '处理中...' : 'AI深度分析'}</button>
                     <button id="apiKeyToggleBtn" className="secondary" onClick={() => setShowAiSettings(!showAiSettings)}>AI 设置</button>
                 </div>
