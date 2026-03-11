@@ -1450,8 +1450,8 @@ function EvaluateContent() {
                             <p>📅 评估日期：{companyInfo.evaluationDate}</p>
                             <p>出海优劣势综合评估報告</p>
                         </div>
-                        <div className="oversea-score-circle" style={{ borderColor: (assessmentResult?.overallScore || 0) >= 70 ? '#00b894' : (assessmentResult?.overallScore || 0) >= 50 ? '#fdcb6e' : '#e74c3c' }}>
-                            <span className="score-num">{Math.round(assessmentResult?.overallScore || 0)}</span>
+                        <div className="oversea-score-circle" style={{ borderColor: (assessmentResult?.totalScore || 0) >= 70 ? '#00b894' : (assessmentResult?.totalScore || 0) >= 50 ? '#fdcb6e' : '#e74c3c' }}>
+                            <span className="score-num">{Math.round(assessmentResult?.totalScore || 0)}</span>
                             <span className="score-pct">總體評分</span>
                         </div>
                     </div>
@@ -1500,7 +1500,12 @@ function EvaluateContent() {
                                     </div>
                                 </div>
 
-                                {isCountryLoading && <div className="loading-spinner">獲取數據中...</div>}
+                                {isCountryLoading && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '15px', color: '#3498db', fontWeight: 600 }}>
+                                        <div className="loading-spinner" style={{ width: '24px', height: '24px', borderWidth: '3px' }}></div>
+                                        <span>獲取數據中...</span>
+                                    </div>
+                                )}
                                 {countryDetails && (
                                     <div className="oversea-country-card">
                                         <h4>📋 {countryDetails.name || selectedCountry} 詳細信息</h4>
@@ -1621,20 +1626,20 @@ function EvaluateContent() {
                         <div className="modal-subtitle" id="modalSubtitle">综合评分分析结果</div>
                     </div>
                     <div className="modal-score-hero">
-                        <div id="modalScoreCircle" className="modal-score-circle" style={{
-                            background: assessmentResult?.overallScore >= 70 ? 'linear-gradient(135deg, #00b894, #55efc4)' :
-                                assessmentResult?.overallScore >= 50 ? 'linear-gradient(135deg, #fdcb6e, #f39c12)' :
-                                    'linear-gradient(135deg, #e74c3c, #fd79a8)'
+                        <div className="comprehensive-score" style={{
+                            background: assessmentResult?.totalScore >= 70 ? 'linear-gradient(135deg, #00b894, #55efc4)' :
+                                assessmentResult?.totalScore >= 50 ? 'linear-gradient(135deg, #fdcb6e, #f39c12)' :
+                                    'linear-gradient(135deg, #ff7675, #d63031)'
                         }}>
-                            <span id="modalScoreValue">{assessmentResult?.overallScore?.toFixed(1) || '0'}</span>
-                            <span className="score-label">/ 100</span>
+                            <span id="modalScoreValue">{assessmentResult?.totalScore?.toFixed(1) || '0'}</span>
+                            <span style={{ fontSize: '1rem', opacity: 0.9 }}>總體評分</span>
                         </div>
-                        <div id="modalGradeBadge" className="modal-grade-badge" style={
-                            assessmentResult?.overallScore ?
-                                { backgroundColor: getGradeClass(assessmentResult.overallScore).bg, color: getGradeClass(assessmentResult.overallScore).color } :
-                                { backgroundColor: '#f8f9fa', color: '#6c757d' }
+                        <div className="score-grade" style={
+                            assessmentResult?.totalScore ?
+                                { backgroundColor: getGradeClass(assessmentResult.totalScore).bg, color: getGradeClass(assessmentResult.totalScore).color } :
+                                { backgroundColor: '#eee', color: '#666' }
                         }>
-                            {assessmentResult?.overallScore ? getGradeClass(assessmentResult.overallScore).text : '尚未评估'}
+                            {assessmentResult?.totalScore ? getGradeClass(assessmentResult.totalScore).text : '尚未評估'}
                         </div>
                     </div>
                     <div className="modal-body">
