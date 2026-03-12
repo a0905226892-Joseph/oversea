@@ -16,7 +16,7 @@ export async function GET() {
         // 获取用户信息和使用次数
         const { data: profile } = await supabase
             .from('profiles')
-            .select('subscription_tier, subscription_expires_at, api_key_verified, ai_lab_api_key')
+            .select('subscription_tier, subscription_expires_at, api_key_verified, ai_lab_api_key, is_admin')
             .eq('id', user.id)
             .single()
 
@@ -40,6 +40,7 @@ export async function GET() {
             remaining,
             hasApiKey: !!profile?.ai_lab_api_key,
             apiKeyVerified: profile?.api_key_verified || false,
+            isAdmin: profile?.is_admin || false,
         })
     } catch {
         return NextResponse.json({ error: '获取使用次数失败' }, { status: 500 })

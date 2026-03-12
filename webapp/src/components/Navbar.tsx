@@ -12,6 +12,7 @@ interface UsageInfo {
     remaining: number | null
     hasApiKey: boolean
     apiKeyVerified: boolean
+    isAdmin: boolean
 }
 
 interface NavbarProps {
@@ -177,6 +178,11 @@ export default function Navbar({ userEmail }: NavbarProps) {
                             <Link href="/app/settings" className="btn btn-sm btn-ghost" style={{ width: '100%', justifyContent: 'center', color: 'var(--text-mid)', border: '1px solid var(--border)' }}>
                                 ⚙️ 个人设置
                             </Link>
+                            {usage?.isAdmin && (
+                                <Link href="/app/admin" className="btn btn-sm" style={{ background: '#1e293b', color: '#fff', width: '100%', justifyContent: 'center' }}>
+                                    🛡️ 管理员控制台
+                                </Link>
+                            )}
                             <button onClick={handleLogout} className="btn btn-sm" style={{ background: '#f1f5f9', color: 'var(--text-mid)' }}>
                                 退出登录
                             </button>
