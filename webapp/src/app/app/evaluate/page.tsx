@@ -14,8 +14,11 @@ import {
     Filler,
     Tooltip,
     Legend,
+    CategoryScale,
+    LinearScale,
+    BarElement,
 } from 'chart.js'
-import { Radar } from 'react-chartjs-2'
+import { Radar, Bar } from 'react-chartjs-2'
 
 // 註冊 Chart.js 組件
 ChartJS.register(
@@ -24,7 +27,10 @@ ChartJS.register(
     LineElement,
     Filler,
     Tooltip,
-    Legend
+    Legend,
+    CategoryScale,
+    LinearScale,
+    BarElement
 )
 
 const overseaRegionCountries: Record<string, string[]> = {
@@ -896,6 +902,218 @@ function EvaluateContent() {
     }
 
     const [activeTab, setActiveTab] = useState<'指标' | '结果' | '分析' | '报告'>('指标')
+    const [activeAnalysisTab, setActiveAnalysisTab] = useState<'pestel' | 'fourP' | 'vrio'>('pestel')
+    const [activeReportTab, setActiveReportTab] = useState<'metrics' | 'pestel' | 'fourP' | 'vrio'>('metrics')
+
+    // === 輔助計算函數 ===
+
+    // 生成 SWOT 分析（根據計分高低自動產生）
+    const generateSwot = useMemo(() => {
+        const result = assessmentResult || liveAssessmentResult;
+        if (!result) return { strengths: [], weaknesses: [], opportunities: [], threats: [] };
+        const metricList = Object.entries(result.metricResults || {}) as [string, any][];
+        const sorted = metricList.sort((a, b) => (b[1]?.points || 0) - (a[1]?.points || 0));
+        const topMetrics = sorted.slice(0, 5);
+        const bottomMetrics = sorted.slice(-5).reverse();
+        const metricName = (id: string) => metrics.find(m => m.id === id)?.name || id;
+        return {
+            strengths: topMetrics.map(([id]) => `${metricName(id)} 表現優異，具備競爭優勢`),
+            weaknesses: bottomMetrics.map(([id]) => `${metricName(id)} 需重點改善，存在明顯短板`),
+            opportunities: [
+                '市場規模持續擴大，增長潛力可觀',
+                '政策面向相關行業傾斜，有助業務擴展',
+                '海外市場具備優質出海機會',
+                '技術革新帶來新的應用場景',
+                '行業整合期帶來戰略合作契機'
+            ],
+            threats: [
+                '競爭格局加劇，市場佔有率受壓',
+                '監管環境變化可能增加合規成本',
+                '宏觀經濟波動影響投資意願',
+                '新興技術替代風險需密切關注',
+                '核心人才流失風險影響長期發展'
+            ]
+        };
+    }, [assessmentResult, liveAssessmentResult]);
+
+    // 生成關鍵發現（最高5 / 最低5項 metrics）
+    const generateKeyFindings = useMemo(() => {
+        const result = assessmentResult || liveAssessmentResult;
+        if (!result) return { top: [], bottom: [] };
+        const metricList = Object.entries(result.metricResults || {}) as [string, any][];
+        const sorted = metricList.sort((a, b) => (b[1]?.points || 0) - (a[1]?.points || 0));
+        const metricName = (id: string) => metrics.find(m => m.id === id)?.name || id;
+        return {
+            top: sorted.slice(0, 5).map(([id, r]) => ({ name: metricName(id), score: r?.score || 0, points: r?.points || 0 })),
+            bottom: sorted.slice(-5).reverse().map(([id, r]) => ({ name: metricName(id), score: r?.score || 0, points: r?.points || 0 }))
+        };
+    }, [assessmentResult, liveAssessmentResult]);
+
+    // 生成融資階段建議
+    const getFundingRecommendation = (score: number) => {
+        if (score >= 85) return '適合融資階段：A 輪 / B 輪（優質標的）';
+        if (score >= 70) return '適合融資階段：天使輪 / Pre-A（良好標的）';
+        if (score >= 50) return '適合融資階段：種子輪（需改善後融資）';
+        return '建議暫緩融資：先優化核心短板，再考慮融資';
+    };
+
+    // 生成風險評估文字
+    const generateRiskText = useMemo(() => {
+        const result = assessmentResult || liveAssessmentResult;
+        if (!result) return '請先計算評分後自動生成風險評估。';
+        const score = result.totalScore || result.finalResult?.finalScore || 0;
+        const lowCats = categoriesConfig.filter(c => (result.categoryScores[c.id]?.score || 0) < 50);
+        const highCats = categoriesConfig.filter(c => (result.categoryScores[c.id]?.score || 0) >= 70);
+        let text = `本企業綜合評分 ${score.toFixed(1)} 分。`;
+        if (lowCats.length > 0) {
+            text += `\n\n⚠️ 高風險維度（評分 < 50）：${lowCats.map(c => c.name).join('、')}。建議優先改善這些短板，降低投資風險。`;
+        }
+        if (highCats.length > 0) {
+            text += `\n\n✅ 優勢維度（評分 ≥ 70）：${highCats.map(c => c.name).join('、')}。可作為核心競爭力持續強化。`;
+        }
+        text += `\n\n📌 綜合風險評級：${ score >= 85 ? '低風險 (L)' : score >= 70 ? '中低風險 (ML)' : score >= 50 ? '中高風險 (MH)' : '高風險 (H)' }`;
+        return text;
+    }, [assessmentResult, liveAssessmentResult]);
+
+    // 生成投資建議文字
+    const generateInvestmentRecommendation = useMemo(() => {
+        const result = assessmentResult || liveAssessmentResult;
+        if (!result) return '請先計算評分後自動生成投資建議。';
+        const score = result.totalScore || result.finalResult?.finalScore || 0;
+        const grade = result.grade || (score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 50 ? 'C' : 'D');
+        const gradeMap: Record<string, string> = {
+            'A': '強烈推薦投資。企業具備卓越的綜合實力，在團隊、產品、市場等核心維度均表現優異，具有較大的成長空間和投資回報潛力。建議優先考慮資金介入。',
+            'B': '建議積極關注。企業整體表現良好，部分核心指標優秀，具備一定的競爭優勢。建議在進一步盡調後擇機投資，重點關注短板維度的改善計劃。',
+            'C': '建議謹慎觀望。企業尚存在明顯短板，投資風險相對較高。建議企業先針對弱項進行系統性改善，待 6-12 個月後重新評估。',
+            'D': '暫不建議投資。企業在多個關鍵維度存在嚴重缺陷，當前風險遠超潛在回報。建議企業進行全面戰略重組後再考慮融資。'
+        };
+        return gradeMap[grade] || gradeMap['C'];
+    }, [assessmentResult, liveAssessmentResult]);
+
+    // 生成 PESTEL 柱狀圖數據
+    const pestelChartData = useMemo(() => {
+        const result = assessmentResult || liveAssessmentResult;
+        const cs = result?.categoryScores || {};
+        return {
+            labels: ['政治(P)', '經濟(E)', '社會(S)', '技術(T)', '環境(E)', '法律(L)'],
+            datasets: [{
+                label: 'PESTEL 評分',
+                data: [
+                    Math.round((cs['strategy']?.score || 0) * 0.8),
+                    Math.round((cs['finance']?.score || 0) * 0.9),
+                    Math.round((cs['market']?.score || 0) * 0.85),
+                    Math.round((cs['product']?.score || 0) * 0.95),
+                    Math.round((cs['sustainability']?.score || 0)),
+                    Math.round((cs['operations']?.score || 0) * 0.9)
+                ],
+                backgroundColor: ['rgba(52,152,219,0.7)', 'rgba(46,204,113,0.7)', 'rgba(241,196,15,0.7)', 'rgba(155,89,182,0.7)', 'rgba(26,188,156,0.7)', 'rgba(230,126,34,0.7)'],
+                borderRadius: 6,
+            }]
+        };
+    }, [assessmentResult, liveAssessmentResult]);
+
+    // 生成 4P 柱狀圖數據
+    const fourPChartData = useMemo(() => {
+        const result = assessmentResult || liveAssessmentResult;
+        const cs = result?.categoryScores || {};
+        return {
+            labels: ['產品(Product)', '定價(Price)', '通路(Place)', '推廣(Promotion)'],
+            datasets: [{
+                label: '4P 評分',
+                data: [
+                    Math.round((cs['product']?.score || 0)),
+                    Math.round((cs['finance']?.score || 0) * 0.85),
+                    Math.round((cs['operations']?.score || 0) * 0.9),
+                    Math.round((cs['market']?.score || 0) * 0.95)
+                ],
+                backgroundColor: ['rgba(52,152,219,0.7)', 'rgba(46,204,113,0.7)', 'rgba(241,196,15,0.7)', 'rgba(231,76,60,0.7)'],
+                borderRadius: 6,
+            }]
+        };
+    }, [assessmentResult, liveAssessmentResult]);
+
+    // 生成 VRIO 雷達圖數據
+    const vrioChartData = useMemo(() => {
+        const result = assessmentResult || liveAssessmentResult;
+        const cs = result?.categoryScores || {};
+        return {
+            labels: ['有价值(V)', '稀缺(R)', '难模仿(I)', '有组织(O)'],
+            datasets: [{
+                label: 'VRIO 競爭力',
+                data: [
+                    Math.round((cs['product']?.score || 0) * 0.9),
+                    Math.round((cs['strategy']?.score || 0) * 0.85),
+                    Math.round(((cs['product']?.score || 0) + (cs['team']?.score || 0)) / 2 * 0.9),
+                    Math.round((cs['operations']?.score || 0))
+                ],
+                backgroundColor: 'rgba(108,92,231,0.2)',
+                borderColor: 'rgba(108,92,231,1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(108,92,231,1)',
+            }]
+        };
+    }, [assessmentResult, liveAssessmentResult]);
+
+    // 生成核心短板雷達圖數據（差距分值 = 100 - score）
+    const weaknessRadarData = useMemo(() => {
+        const result = assessmentResult || liveAssessmentResult;
+        return {
+            labels: categoriesConfig.map(c => c.name),
+            datasets: [{
+                label: '短板差距 (100-得分)',
+                data: categoriesConfig.map(c => Math.max(0, 100 - (result?.categoryScores[c.id]?.score || 0))),
+                backgroundColor: 'rgba(231,76,60,0.2)',
+                borderColor: 'rgba(231,76,60,1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(231,76,60,1)',
+                pointBorderColor: '#fff',
+            }]
+        };
+    }, [assessmentResult, liveAssessmentResult]);
+
+    // 生成核心優勢雷達圖數據（計分分值）
+    const strengthRadarData = useMemo(() => {
+        const result = assessmentResult || liveAssessmentResult;
+        return {
+            labels: categoriesConfig.map(c => c.name),
+            datasets: [{
+                label: '優勢計分',
+                data: categoriesConfig.map(c => result?.categoryScores[c.id]?.score || 0),
+                backgroundColor: 'rgba(46,204,113,0.2)',
+                borderColor: 'rgba(46,204,113,1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(46,204,113,1)',
+                pointBorderColor: '#fff',
+            }]
+        };
+    }, [assessmentResult, liveAssessmentResult]);
+
+    // TXT 匯出
+    const handleExportTxt = () => {
+        const result = assessmentResult || liveAssessmentResult;
+        const score = (result?.totalScore || 0).toFixed(1);
+        const grade = result?.grade || '未計算';
+        let txt = `===== 企業投資評估報告 =====\n`;
+        txt += `企業名稱：${companyInfo.companyName || '未填寫'}\n`;
+        txt += `所屬行業：${companyInfo.industry || '未選擇'}\n`;
+        txt += `評估日期：${companyInfo.evaluationDate || '-'}\n`;
+        txt += `發展階段：${companyInfo.fundingStage || '未選擇'}\n\n`;
+        txt += `===== 綜合評分 =====\n`;
+        txt += `總分：${score}/100\n評級：${grade}\n\n`;
+        txt += `===== 七大維度評分 =====\n`;
+        categoriesConfig.forEach(c => {
+            const cs = result?.categoryScores[c.id];
+            txt += `${c.name}：${(cs?.score || 0).toFixed(1)} 分（計分：${(cs?.points || 0).toFixed(2)}，權重：${(cs?.totalWeight || 0).toFixed(1)}%）\n`;
+        });
+        txt += `\n===== 投資建議 =====\n${generateInvestmentRecommendation}\n`;
+        if (aiResult) txt += `\n===== AI 深度分析 =====\n${aiResult.content}\n`;
+        txt += `\n@2026 AI先进技术实验室 | 128维度向量数据库+AI算法分析`;
+        const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${companyInfo.companyName || '企业'}_评估报告.txt`; a.click();
+        URL.revokeObjectURL(url);
+    };
 
     if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}><span className="spinner spinner-dark" /> 加载数据中...</div>
 
@@ -1866,68 +2084,338 @@ function EvaluateContent() {
                 )}
 
                 {activeTab === '结果' && (
-                    <div style={{ animation: 'fadeIn 0.3s ease', display: 'grid', gridTemplateColumns: '380px 1fr', gap: '24px' }}>
-                        <div style={{ position: 'sticky', top: '24px' }}>
-                            <div className="card" style={{
-                                textAlign: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', color: '#fff', marginBottom: '24px', padding: '60px 24px', borderRadius: '24px', border: 'none'
-                            }}>
-                                <div style={{ fontSize: '16px', opacity: 0.8, letterSpacing: '2px' }}>企业综合投资评分</div>
-                                <div style={{ fontSize: '7rem', fontWeight: 900, margin: '20px 0', textShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
-                                    {assessmentResult?.totalScore || 0}
+                    <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                        {/* 綜合評分主卡 */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: '24px', marginBottom: '32px' }}>
+                            <div style={{ textAlign: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', color: '#fff', padding: '48px 24px', borderRadius: '24px' }}>
+                                <div style={{ fontSize: '14px', opacity: 0.8, letterSpacing: '2px', marginBottom: '12px' }}>企業綜合投資評分</div>
+                                <div style={{ fontSize: '6rem', fontWeight: 900, margin: '8px 0', textShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+                                    {(assessmentResult?.totalScore || liveAssessmentResult.totalScore || 0).toFixed(0)}
                                 </div>
-                                <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.2)', padding: '12px 32px', borderRadius: '30px', fontWeight: 700, fontSize: '20px' }}>
-                                    评级：{assessmentResult?.grade || '待计算'}
+                                <div style={{ fontSize: '13px', opacity: 0.7, marginBottom: '4px' }}>/100</div>
+                                <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.2)', padding: '8px 24px', borderRadius: '30px', fontWeight: 700, fontSize: '16px', marginBottom: '16px' }}>
+                                    評級：{assessmentResult?.grade || liveAssessmentResult.grade || '待計算'}
+                                </div>
+                                <div style={{ fontSize: '13px', opacity: 0.75, padding: '8px 16px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}>
+                                    {getFundingRecommendation(assessmentResult?.totalScore || liveAssessmentResult.totalScore || 0)}
                                 </div>
                             </div>
-                            <button onClick={handleExportPdf} className="btn btn-lg" style={{ background: '#10b981', color: '#fff', border: 'none', width: '100%' }} disabled={exportLoading}>
-                                {exportLoading ? <span className="spinner" /> : '📄 导出 PDF 专业报告'}
+                            <div style={{ padding: '24px', background: '#fff', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+                                <h4 style={{ marginBottom: '20px', fontSize: '1.2rem', fontWeight: 800, borderLeft: '5px solid var(--primary)', paddingLeft: '12px' }}>竟爭力維度分布</h4>
+                                <div style={{ height: '280px' }}><Radar data={radarData} options={radarOptions} /></div>
+                            </div>
+                        </div>
+
+                        {/* 七大區塊計分卡 */}
+                        <div style={{ marginBottom: '32px' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', fontSize: '1.1rem', color: '#1e293b' }}>📊 七大維度評分</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                                {categoriesConfig.map((cat, idx) => {
+                                    const colors = ['#3b82f6','#10b981','#ef4444','#f59e0b','#a855f7','#334155','#2dd4bf'];
+                                    const cs = (assessmentResult || liveAssessmentResult).categoryScores[cat.id];
+                                    return (
+                                        <div key={cat.id} style={{ padding: '20px', borderRadius: '16px', background: '#f8fafc', border: `2px solid ${colors[idx]}22`, textAlign: 'center' }}>
+                                            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>{cat.name}計分</div>
+                                            <div style={{ fontSize: '2.5rem', fontWeight: 900, color: colors[idx], margin: '8px 0' }}>{(cs?.points || 0).toFixed(1)}</div>
+                                            <div style={{ fontSize: '12px', color: '#94a3b8' }}>得分：{(cs?.score || 0).toFixed(0)} | 權重：{(cs?.totalWeight || 0).toFixed(1)}%</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* 核心短板 + 優勢雷達圖 */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                            <div style={{ padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                                <h4 style={{ marginBottom: '16px', fontWeight: 700, color: '#e74c3c' }}>📉 核心短板分析（差距分值）</h4>
+                                <div style={{ height: '280px' }}><Radar data={weaknessRadarData} options={radarOptions} /></div>
+                            </div>
+                            <div style={{ padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                                <h4 style={{ marginBottom: '16px', fontWeight: 700, color: '#2ecc71' }}>📈 核心優勢分析（計分分值）</h4>
+                                <div style={{ height: '280px' }}><Radar data={strengthRadarData} options={radarOptions} /></div>
+                            </div>
+                        </div>
+
+                        {/* 匯出按鈕 */}
+                        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                            <button onClick={handleExportPdf} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '12px 28px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }} disabled={exportLoading}>
+                                {exportLoading ? <span className="spinner" /> : '📄 導出 PDF 專業報告'}
+                            </button>
+                            <button onClick={handleExportTxt} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '12px 28px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }}>
+                                📃 導出 TXT 報告
                             </button>
                         </div>
-                        <div className="card" style={{ padding: '32px', borderRadius: '20px' }}>
-                            <h4 style={{ marginBottom: '32px', fontSize: '1.5rem', fontWeight: 800, borderLeft: '6px solid var(--primary)', paddingLeft: '16px' }}>竞争力维度分布</h4>
-                            <div style={{ height: '500px' }}>
-                                <Radar data={radarData} options={radarOptions} />
-                            </div>
-                        </div>
+                        <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '16px 0' }}>@2026 AI先进技术实验室 | 128维度向量数据库+AI算法分析</div>
                     </div>
                 )}
 
                 {activeTab === '分析' && (
                     <div style={{ animation: 'fadeIn 0.3s ease' }}>
-                        {!aiResult ? (
-                            <div style={{ textAlign: 'center', padding: '100px', background: '#fff', borderRadius: '12px', border: '2px dashed #e2e8f0' }}>
-                                <div style={{ fontSize: '48px', marginBottom: '20px' }}>🤖</div>
-                                <h3>尚未生成 AI 深度分析</h3>
-                                <p style={{ color: '#64748b', marginBottom: '24px' }}>点击顶部的「AI深度分析」按钮，由 AI算法实验室 为您生成 PESTEL/4P/VRIO 专家洞察</p>
-                                <button onClick={handleAiAnalyze} className="btn btn-primary" disabled={aiLoading}>
-                                    {aiLoading ? <span className="spinner" /> : '立即开始 AI 分析'}
-                                </button>
+                        {/* 企業體質分析計分卡 */}
+                        <div style={{ marginBottom: '32px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', fontSize: '1.1rem', color: '#1e293b' }}>🏢 企業體質分析（基於計分）</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+                                {([
+                                    { id: 'team', label: '團隊能力', color: '#3b82f6' },
+                                    { id: 'product', label: '產品/技術', color: '#10b981' },
+                                    { id: 'finance', label: '資本結構', color: '#f59e0b' },
+                                    { id: 'market', label: '市場佔有', color: '#ef4444' },
+                                    { id: 'strategy', label: '海外競爭力', color: '#334155' },
+                                    { id: 'operations', label: '優勢壁壘', color: '#a855f7' },
+                                    { id: 'sustainability', label: '可持續性', color: '#2dd4bf' },
+                                ] as const).map(item => {
+                                    const cs = (assessmentResult || liveAssessmentResult).categoryScores[item.id];
+                                    return (
+                                        <div key={item.id} style={{ padding: '16px', borderRadius: '12px', background: '#f8fafc', border: `2px solid ${item.color}22`, textAlign: 'center' }}>
+                                            <div style={{ fontSize: '12px', color: '#64748b' }}>{item.label}計分</div>
+                                            <div style={{ fontSize: '2rem', fontWeight: 900, color: item.color, margin: '6px 0' }}>{(cs?.points || 0).toFixed(1)}</div>
+                                            <div style={{ fontSize: '11px', color: '#94a3b8' }}>權重 {(cs?.totalWeight || 0).toFixed(1)}%</div>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        ) : (
-                            <div className="card" style={{ padding: '40px', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '24px' }}>
-                                <h2 style={{ color: '#7c3aed', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <span>🤖</span> AI 专家深度洞察报告
-                                </h2>
-                                <div style={{ whiteSpace: 'pre-wrap', lineHeight: 2, color: '#4b5563', fontSize: '16px' }}>
-                                    {aiResult.content}
+                        </div>
+
+                        {/* 多維度分析 Sub-Tab */}
+                        <div style={{ marginBottom: '32px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', fontSize: '1.1rem', color: '#1e293b' }}>📐 多維度深度分析模型</h3>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px' }}>
+                                {([['pestel', 'PESTEL 宏觀環境'], ['fourP', '4P 營銷矩陣'], ['vrio', 'VRIO 核心競爭力']] as const).map(([key, label]) => (
+                                    <button key={key} onClick={() => setActiveAnalysisTab(key)}
+                                        style={{ padding: '8px 20px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '14px',
+                                            background: activeAnalysisTab === key ? 'var(--primary)' : '#f1f5f9',
+                                            color: activeAnalysisTab === key ? '#fff' : '#64748b', transition: 'all 0.2s' }}>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {activeAnalysisTab === 'pestel' && (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                    <div style={{ height: '280px' }}>
+                                        <Bar data={pestelChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }} />
+                                    </div>
+                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px' }}>
+                                        <h4 style={{ color: '#1e293b', marginBottom: '12px' }}><span>🌍</span> PESTEL 深度見解</h4>
+                                        <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}>
+                                            {aiResult ? <div dangerouslySetInnerHTML={{ __html: aiResult.content.replace(/\n/g, '<br/>').substring(0, 600) + '...' }} /> :
+                                                <p style={{ color: '#7f8c8d', fontStyle: 'italic' }}>等待 AI 分析生成宏觀環境見解...<br/>請點擊頂部「AI深度分析」按鈕生成。</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {activeAnalysisTab === 'fourP' && (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                    <div style={{ height: '280px' }}>
+                                        <Bar data={fourPChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }} />
+                                    </div>
+                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px' }}>
+                                        <h4 style={{ color: '#1e293b', marginBottom: '12px' }}><span>📢</span> 4P 營銷策略建議</h4>
+                                        <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}>
+                                            {aiResult ? <div dangerouslySetInnerHTML={{ __html: aiResult.content.replace(/\n/g, '<br/>').substring(200, 800) + '...' }} /> :
+                                                <p style={{ color: '#7f8c8d', fontStyle: 'italic' }}>等待 AI 分析生成營銷策略建議...<br/>請點擊頂部「AI深度分析」按鈕生成。</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {activeAnalysisTab === 'vrio' && (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                    <div style={{ height: '280px' }}>
+                                        <Radar data={vrioChartData} options={{ ...radarOptions, scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false } } } }} />
+                                    </div>
+                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px' }}>
+                                        <h4 style={{ color: '#1e293b', marginBottom: '12px' }}><span>🛡️</span> VRIO 護城河分析</h4>
+                                        <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}>
+                                            {aiResult ? <div dangerouslySetInnerHTML={{ __html: aiResult.content.replace(/\n/g, '<br/>').substring(400, 1000) + '...' }} /> :
+                                                <p style={{ color: '#7f8c8d', fontStyle: 'italic' }}>等待 AI 分析生成核心競爭力見解...<br/>請點擊頂部「AI深度分析」按鈕生成。</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* SWOT 分析矩陣 */}
+                        <div style={{ marginBottom: '24px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', fontSize: '1.1rem', color: '#1e293b' }}>🔲 SWOT 分析矩陣</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div style={{ padding: '20px', background: '#d4edda', borderRadius: '12px', border: '1px solid #c3e6cb' }}>
+                                    <div style={{ fontWeight: 800, color: '#155724', marginBottom: '12px', fontSize: '15px' }}>✅ 優勢 (Strengths)</div>
+                                    <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#155724', fontSize: '14px', lineHeight: 1.8 }}>
+                                        {generateSwot.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                                    </ul>
+                                </div>
+                                <div style={{ padding: '20px', background: '#f8d7da', borderRadius: '12px', border: '1px solid #f5c6cb' }}>
+                                    <div style={{ fontWeight: 800, color: '#721c24', marginBottom: '12px', fontSize: '15px' }}>⚠️ 劣勢 (Weaknesses)</div>
+                                    <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#721c24', fontSize: '14px', lineHeight: 1.8 }}>
+                                        {generateSwot.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
+                                    </ul>
+                                </div>
+                                <div style={{ padding: '20px', background: '#d1ecf1', borderRadius: '12px', border: '1px solid #bee5eb' }}>
+                                    <div style={{ fontWeight: 800, color: '#0c5460', marginBottom: '12px', fontSize: '15px' }}>💡 機會 (Opportunities)</div>
+                                    <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#0c5460', fontSize: '14px', lineHeight: 1.8 }}>
+                                        {generateSwot.opportunities.map((s, i) => <li key={i}>{s}</li>)}
+                                    </ul>
+                                </div>
+                                <div style={{ padding: '20px', background: '#fff3cd', borderRadius: '12px', border: '1px solid #ffeeba' }}>
+                                    <div style={{ fontWeight: 800, color: '#856404', marginBottom: '12px', fontSize: '15px' }}>🚨 威脅 (Threats)</div>
+                                    <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#856404', fontSize: '14px', lineHeight: 1.8 }}>
+                                        {generateSwot.threats.map((s, i) => <li key={i}>{s}</li>)}
+                                    </ul>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* AI 分析結果區 */}
+                        {aiResult && (
+                            <div style={{ padding: '24px', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '16px', marginBottom: '24px' }}>
+                                <h3 style={{ color: '#7c3aed', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span>🤖</span> AI 專家深度洞察報告
+                                </h3>
+                                <div style={{ whiteSpace: 'pre-wrap', lineHeight: 2, color: '#4b5563', fontSize: '15px' }}>{aiResult.content}</div>
+                            </div>
                         )}
+                        {!aiResult && (
+                            <div style={{ textAlign: 'center', padding: '32px', background: '#fff', borderRadius: '12px', border: '2px dashed #e2e8f0', marginBottom: '24px' }}>
+                                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🤖</div>
+                                <h3 style={{ marginBottom: '8px' }}>尚未生成 AI 深度分析</h3>
+                                <p style={{ color: '#64748b', marginBottom: '16px' }}>點擊頂部的「AI深度分析」按鈕，由 AI算法實驗室 為您生成 PESTEL/4P/VRIO 專家洞察</p>
+                                <button onClick={handleAiAnalyze} style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '10px 28px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }} disabled={aiLoading}>
+                                    {aiLoading ? <span className="spinner" /> : '立即開始 AI 分析'}
+                                </button>
+                            </div>
+                        )}
+                        <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '16px 0' }}>@2026 AI先进技术实验室 | 128维度向量数据库+AI算法分析</div>
                     </div>
                 )}
 
                 {activeTab === '报告' && (
-                    <div style={{ animation: 'fadeIn 0.3s ease', background: '#fff', padding: '40px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                            <h2 style={{ fontWeight: 800 }}>📄 预览专业评估报告</h2>
-                            <button onClick={handleExportPdf} className="btn btn-primary" disabled={exportLoading}>
-                                {exportLoading ? <span className="spinner" /> : '⬇️ 下载 PDF'}
+                    <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                        {/* 企業基本資訊 */}
+                        <div style={{ marginBottom: '24px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', color: '#1e293b' }}>🏢 企業基本信息</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <p><strong>企業名稱：</strong>{companyInfo.companyName || '未填寫'}</p>
+                                <p><strong>所屬行業：</strong>{companyInfo.industry || '未選擇'}</p>
+                                <p><strong>評估日期：</strong>{companyInfo.evaluationDate || '-'}</p>
+                                <p><strong>發展階段：</strong>{companyInfo.fundingStage || '未選擇'}</p>
+                            </div>
+                        </div>
+
+                        {/* 投資評估總結 */}
+                        <div style={{ marginBottom: '24px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', color: '#1e293b' }}>💼 投資評估總結（基於計分）</h3>
+                            <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '10px', lineHeight: 1.8, color: '#475569' }}>
+                                <strong>總分：</strong>{((assessmentResult || liveAssessmentResult)?.totalScore || 0).toFixed(1)}/100
+                                &nbsp;｜&nbsp;<strong>評級：</strong>{(assessmentResult || liveAssessmentResult)?.grade || '待計算'}<br />
+                                {getFundingRecommendation((assessmentResult || liveAssessmentResult)?.totalScore || 0)}
+                            </div>
+                        </div>
+
+                        {/* 關鍵發現 */}
+                        <div style={{ marginBottom: '24px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', color: '#1e293b' }}>🔑 關鍵發現（計分最高/最低各5項）</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div>
+                                    <div style={{ fontWeight: 700, color: '#155724', marginBottom: '10px' }}>🏆 最高5項（核心優勢）</div>
+                                    {generateKeyFindings.top.map((item, i) => (
+                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#d4edda', borderRadius: '8px', marginBottom: '6px', fontSize: '14px' }}>
+                                            <span>{i+1}. {item.name}</span>
+                                            <span style={{ fontWeight: 700, color: '#155724' }}>{item.points.toFixed(1)} 分</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 700, color: '#721c24', marginBottom: '10px' }}>⚠️ 最低5項（需改善）</div>
+                                    {generateKeyFindings.bottom.map((item, i) => (
+                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#f8d7da', borderRadius: '8px', marginBottom: '6px', fontSize: '14px' }}>
+                                            <span>{i+1}. {item.name}</span>
+                                            <span style={{ fontWeight: 700, color: '#721c24' }}>{item.points.toFixed(1)} 分</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 深度分析圖表 Sub-Tab */}
+                        <div style={{ marginBottom: '24px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', color: '#1e293b' }}>📊 深度分析圖表（分頁切換）</h3>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px' }}>
+                                {([['metrics', '指標分析'], ['pestel', 'PESTEL'], ['fourP', '4P 矩陣'], ['vrio', 'VRIO 競爭力']] as const).map(([key, label]) => (
+                                    <button key={key} onClick={() => setActiveReportTab(key)}
+                                        style={{ padding: '7px 18px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px',
+                                            background: activeReportTab === key ? 'var(--primary)' : '#f1f5f9',
+                                            color: activeReportTab === key ? '#fff' : '#64748b' }}>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                            {activeReportTab === 'metrics' && (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                    <div>
+                                        <div style={{ fontWeight: 700, color: '#e74c3c', marginBottom: '8px', fontSize: '14px' }}>核心短板分析</div>
+                                        <div style={{ height: '220px' }}><Radar data={weaknessRadarData} options={radarOptions} /></div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '8px', fontSize: '14px' }}>核心優勢分析</div>
+                                        <div style={{ height: '220px' }}><Radar data={strengthRadarData} options={radarOptions} /></div>
+                                    </div>
+                                </div>
+                            )}
+                            {activeReportTab === 'pestel' && (
+                                <div style={{ height: '260px' }}><Bar data={pestelChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }} /></div>
+                            )}
+                            {activeReportTab === 'fourP' && (
+                                <div style={{ height: '260px' }}><Bar data={fourPChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }} /></div>
+                            )}
+                            {activeReportTab === 'vrio' && (
+                                <div style={{ height: '260px' }}><Radar data={vrioChartData} options={{ ...radarOptions, scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false } } } }} /></div>
+                            )}
+                        </div>
+
+                        {/* SWOT 矩陣同步 */}
+                        <div style={{ marginBottom: '24px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', color: '#1e293b' }}>🔲 SWOT 分析矩陣</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                                <div style={{ padding: '16px', background: '#d4edda', borderRadius: '10px' }}><div style={{ fontWeight: 700, color: '#155724', marginBottom: '8px' }}>✅ 優勢</div><ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: '13px', color: '#155724', lineHeight: 1.8 }}>{generateSwot.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul></div>
+                                <div style={{ padding: '16px', background: '#f8d7da', borderRadius: '10px' }}><div style={{ fontWeight: 700, color: '#721c24', marginBottom: '8px' }}>⚠️ 劣勢</div><ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: '13px', color: '#721c24', lineHeight: 1.8 }}>{generateSwot.weaknesses.map((s, i) => <li key={i}>{s}</li>)}</ul></div>
+                                <div style={{ padding: '16px', background: '#d1ecf1', borderRadius: '10px' }}><div style={{ fontWeight: 700, color: '#0c5460', marginBottom: '8px' }}>💡 機會</div><ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: '13px', color: '#0c5460', lineHeight: 1.8 }}>{generateSwot.opportunities.map((s, i) => <li key={i}>{s}</li>)}</ul></div>
+                                <div style={{ padding: '16px', background: '#fff3cd', borderRadius: '10px' }}><div style={{ fontWeight: 700, color: '#856404', marginBottom: '8px' }}>🚨 威脅</div><ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: '13px', color: '#856404', lineHeight: 1.8 }}>{generateSwot.threats.map((s, i) => <li key={i}>{s}</li>)}</ul></div>
+                            </div>
+                        </div>
+
+                        {/* 風險評估 */}
+                        <div style={{ marginBottom: '24px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', color: '#1e293b' }}>⚠️ 風險評估</h3>
+                            <div style={{ padding: '16px', background: '#fff8e1', borderRadius: '10px', whiteSpace: 'pre-line', lineHeight: 1.9, color: '#475569', fontSize: '14px' }}>
+                                {generateRiskText}
+                            </div>
+                        </div>
+
+                        {/* AI 深度分析結果 */}
+                        <div style={{ marginBottom: '24px', padding: '24px', background: aiResult ? '#f5f3ff' : '#f8fafc', borderRadius: '16px', border: aiResult ? '1px solid #ddd6fe' : '2px dashed #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '16px', color: aiResult ? '#7c3aed' : '#94a3b8' }}>🤖 AI 深度分析</h3>
+                            {aiResult ? (
+                                <div style={{ whiteSpace: 'pre-wrap', lineHeight: 2, color: '#4b5563', fontSize: '14px' }}>{aiResult.content}</div>
+                            ) : (
+                                <p style={{ color: '#94a3b8', textAlign: 'center', fontStyle: 'italic', padding: '20px 0' }}>等待AI分析結果...<br/>點擊上方的「AI深度分析」按鈕進行智能分析</p>
+                            )}
+                        </div>
+
+                        {/* 投資建議 */}
+                        <div style={{ marginBottom: '24px', padding: '24px', background: '#eff6ff', borderRadius: '16px', border: '1px solid #bfdbfe' }}>
+                            <div style={{ fontWeight: 800, fontSize: '16px', color: '#1e40af', marginBottom: '12px' }}>📈 投資建議（基於綜合計分）</div>
+                            <div style={{ lineHeight: 1.9, color: '#1e3a5f', fontSize: '14px' }}>{generateInvestmentRecommendation}</div>
+                        </div>
+
+                        {/* 匯出按鈕 */}
+                        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                            <button onClick={handleExportTxt} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '12px 28px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }}>📃 導出完整評估報告 (TXT)</button>
+                            <button onClick={handleExportPdf} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '12px 28px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }} disabled={exportLoading}>
+                                {exportLoading ? <span className="spinner" /> : '📄 預覽並導出 PDF'}
                             </button>
                         </div>
-                        {/* 这里可以放置报告预览组件/內容，與 PDF 模版類似 */}
-                        <div style={{ border: '1px solid #e2e8f0', padding: '40px', borderRadius: '8px' }}>
-                            <p style={{ textAlign: 'center', color: '#64748b' }}>报告内容生成中，请导出 PDF 查看完整版本。</p>
-                        </div>
+
+                        <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '16px 0' }}>@2026 AI先进技术实验室 | 128维度向量数据库+AI算法分析</div>
                     </div>
                 )}
             </div>
