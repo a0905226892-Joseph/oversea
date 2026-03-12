@@ -265,6 +265,10 @@ function EvaluateContent() {
                 supervisorName: "张华",
                 boardMembers: "王智强、李林、张华",
                 executives: "王智强、李林、张华、徐博、周洁",
+                investorName: "创新资本, 天使基金",
+                investorPaidCapital: "500",
+                investmentDecisionMaker: "白宇翰",
+                operationManager: "柯明成",
                 shareholders: [
                     { name: "王智强 (创始人)", percentage: 35, subscribed: 3500, amount: 3500, type: "common" },
                     { name: "李林 (联合创始人)", percentage: 15, subscribed: 1500, amount: 1500, type: "common" },
@@ -335,6 +339,10 @@ function EvaluateContent() {
                 supervisorName: "赵毅",
                 boardMembers: "陈建国、林峰、赵毅、金伟、吴刚",
                 executives: "陈建国、林峰、赵毅、孙明、周泰",
+                investorName: "环球产业控股集团, 国家产业引导基金",
+                investorPaidCapital: "130000",
+                investmentDecisionMaker: "陈建国",
+                operationManager: "林峰",
                 shareholders: [
                     { name: "环球产业控股集团", percentage: 45, subscribed: 90000, amount: 90000, type: "common" },
                     { name: "国家产业引导基金", percentage: 20, subscribed: 40000, amount: 40000, type: "preferred" },
@@ -404,6 +412,10 @@ function EvaluateContent() {
                 supervisorName: "王芳",
                 boardMembers: "张强、李明、王芳",
                 executives: "张强、李明",
+                investorName: "张强, 顺为资本",
+                investorPaidCapital: "650",
+                investmentDecisionMaker: "張強光",
+                operationManager: "李明德",
                 shareholders: [
                     { name: "张强 (创始人)", percentage: 70, subscribed: 1050, amount: 600, type: "common" },
                     { name: "李明 (技术合伙人)", percentage: 20, subscribed: 300, amount: 150, type: "common" },
@@ -2315,9 +2327,10 @@ ${marketMetrics.map((m, i) => `${i + 1}. ${m.name}: ${values[m.id] || 0}${m.unit
 
                         {/* AI 分析状态列 */}
                         {aiLoading && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '12px', marginBottom: '24px', border: '1px solid #ddd6fe' }}>
-                                <span className="spinner" />
-                                <span style={{ fontWeight: 700, color: '#7c3aed', fontSize: '15px' }}>正在进行 AI 深度分析，请稍候...</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '24px', padding: '60px 20px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '16px', marginBottom: '32px', border: '2px dashed #a855f7', minHeight: '350px' }}>
+                                <div className="spinner" style={{ width: '80px', height: '80px', borderWidth: '8px' }} />
+                                <div style={{ fontWeight: 800, color: '#7c3aed', fontSize: '24px', letterSpacing: '1px' }}>正在进行 AI 深度分析及评分...</div>
+                                <div style={{ color: '#8b5cf6', fontSize: '16px' }}>预计需要 5-15 秒，请耐心等候</div>
                             </div>
                         )}
                         {!aiLoading && !aiSections && (
@@ -2363,12 +2376,12 @@ ${marketMetrics.map((m, i) => `${i + 1}. ${m.name}: ${values[m.id] || 0}${m.unit
                         </div>
 
                         {/* 多维度分析 Sub-Tab */}
-                        <div style={{ marginBottom: '32px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                            <h3 style={{ fontWeight: 800, marginBottom: '16px', fontSize: '1.1rem', color: '#1e293b' }}>📐 多维度深度分析模型</h3>
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px' }}>
+                        <div style={{ marginBottom: '40px', padding: '32px', background: '#fff', borderRadius: '20px', border: '2px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '24px', fontSize: '1.65rem', color: '#1e293b' }}>📐 多维度深度分析模型</h3>
+                            <div style={{ display: 'flex', gap: '12px', marginBottom: '28px', borderBottom: '2px solid #f1f5f9', paddingBottom: '16px' }}>
                                 {([['pestel', 'PESTEL 宏观环境'], ['fourP', '4P 营销矩阵'], ['vrio', 'VRIO 核心竞争力']] as const).map(([key, label]) => (
                                     <button key={key} onClick={() => setActiveAnalysisTab(key)}
-                                        style={{ padding: '8px 20px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '14px',
+                                        style={{ padding: '12px 28px', borderRadius: '30px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '1.2rem',
                                             background: activeAnalysisTab === key ? 'var(--primary)' : '#f1f5f9',
                                             color: activeAnalysisTab === key ? '#fff' : '#64748b', transition: 'all 0.2s' }}>
                                         {label}
@@ -2377,49 +2390,49 @@ ${marketMetrics.map((m, i) => `${i + 1}. ${m.name}: ${values[m.id] || 0}${m.unit
                             </div>
 
                             {activeAnalysisTab === 'pestel' && (
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                                    <div style={{ height: '280px' }}>
-                                        {aiSections ? <Bar data={pestelChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }} /> : <div style={{height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1'}}>等待 AI 深度分析生成...</div>}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                                    <div style={{ height: '450px' }}>
+                                        {aiSections ? <Bar data={pestelChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, ticks: {font: {size: 16}} }, x: {ticks: {font: {size: 16}}} }, plugins: { legend: { display: false } } }} /> : <div style={{height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', background: '#f8fafc', borderRadius: '16px', border: '2px dashed #cbd5e1', fontSize: '1.2rem'}}>等待 AI 深度分析生成...</div>}
                                     </div>
-                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px', overflowY: 'auto', maxHeight: '280px' }}>
-                                        <h4 style={{ color: '#1e293b', marginBottom: '12px' }}><span>🌍</span> PESTEL 深度见解</h4>
+                                    <div style={{ padding: '20px 28px', background: '#f8fafc', borderRadius: '16px', overflowY: 'auto', maxHeight: '450px' }}>
+                                        <h4 style={{ color: '#1e293b', marginBottom: '18px', fontSize: '1.4rem' }}><span>🌍</span> PESTEL 深度见解</h4>
                                         {aiSections?.pestelInsight ? (
-                                            <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}
+                                            <div style={{ color: '#475569', fontSize: '1.15rem', lineHeight: 2 }}
                                                 dangerouslySetInnerHTML={{ __html: formatAIContent(aiSections.pestelInsight) }} />
                                         ) : (
-                                            <p style={{ color: '#7f8c8d', fontStyle: 'italic', fontSize: '13px' }}>等待 AI 分析生成宏观环境见解...</p>
+                                            <p style={{ color: '#7f8c8d', fontStyle: 'italic', fontSize: '1.15rem' }}>等待 AI 分析生成宏观环境见解...</p>
                                         )}
                                     </div>
                                 </div>
                             )}
                             {activeAnalysisTab === 'fourP' && (
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                                    <div style={{ height: '280px' }}>
-                                        {aiSections ? <Bar data={fourPChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }} /> : <div style={{height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1'}}>等待 AI 深度分析生成...</div>}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                                    <div style={{ height: '450px' }}>
+                                        {aiSections ? <Bar data={fourPChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, ticks: {font: {size: 16}} }, x: {ticks: {font: {size: 16}}} }, plugins: { legend: { display: false } } }} /> : <div style={{height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', background: '#f8fafc', borderRadius: '16px', border: '2px dashed #cbd5e1', fontSize: '1.2rem'}}>等待 AI 深度分析生成...</div>}
                                     </div>
-                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px', overflowY: 'auto', maxHeight: '280px' }}>
-                                        <h4 style={{ color: '#1e293b', marginBottom: '12px' }}><span>📢</span> 4P 营销策略建议</h4>
+                                    <div style={{ padding: '20px 28px', background: '#f8fafc', borderRadius: '16px', overflowY: 'auto', maxHeight: '450px' }}>
+                                        <h4 style={{ color: '#1e293b', marginBottom: '18px', fontSize: '1.4rem' }}><span>📢</span> 4P 营销策略建议</h4>
                                         {aiSections?.fourPInsight ? (
-                                            <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}
+                                            <div style={{ color: '#475569', fontSize: '1.15rem', lineHeight: 2 }}
                                                 dangerouslySetInnerHTML={{ __html: formatAIContent(aiSections.fourPInsight) }} />
                                         ) : (
-                                            <p style={{ color: '#7f8c8d', fontStyle: 'italic', fontSize: '13px' }}>等待 AI 分析生成营销策略建议...</p>
+                                            <p style={{ color: '#7f8c8d', fontStyle: 'italic', fontSize: '1.15rem' }}>等待 AI 分析生成营销策略建议...</p>
                                         )}
                                     </div>
                                 </div>
                             )}
                             {activeAnalysisTab === 'vrio' && (
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                                    <div style={{ height: '280px' }}>
-                                        {aiSections ? <Radar data={vrioChartData} options={{ ...radarOptions, scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false } } } }} /> : <div style={{height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1'}}>等待 AI 深度分析生成...</div>}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                                    <div style={{ height: '450px' }}>
+                                        {aiSections ? <Radar data={vrioChartData} options={{ ...radarOptions, scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false }, pointLabels: {font: {size: 16}} } } }} /> : <div style={{height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', background: '#f8fafc', borderRadius: '16px', border: '2px dashed #cbd5e1', fontSize: '1.2rem'}}>等待 AI 深度分析生成...</div>}
                                     </div>
-                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px', overflowY: 'auto', maxHeight: '280px' }}>
-                                        <h4 style={{ color: '#1e293b', marginBottom: '12px' }}><span>🛡️</span> VRIO 护城河分析</h4>
+                                    <div style={{ padding: '20px 28px', background: '#f8fafc', borderRadius: '16px', overflowY: 'auto', maxHeight: '450px' }}>
+                                        <h4 style={{ color: '#1e293b', marginBottom: '18px', fontSize: '1.4rem' }}><span>🛡️</span> VRIO 护城河分析</h4>
                                         {aiSections?.vrioInsight ? (
-                                            <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}
+                                            <div style={{ color: '#475569', fontSize: '1.15rem', lineHeight: 2 }}
                                                 dangerouslySetInnerHTML={{ __html: formatAIContent(aiSections.vrioInsight) }} />
                                         ) : (
-                                            <p style={{ color: '#7f8c8d', fontStyle: 'italic', fontSize: '13px' }}>等待 AI 分析生成核心竞争力见解...</p>
+                                            <p style={{ color: '#7f8c8d', fontStyle: 'italic', fontSize: '1.15rem' }}>等待 AI 分析生成核心竞争力见解...</p>
                                         )}
                                     </div>
                                 </div>
@@ -2427,47 +2440,47 @@ ${marketMetrics.map((m, i) => `${i + 1}. ${m.name}: ${values[m.id] || 0}${m.unit
                         </div>
 
                         {/* SWOT 分析矩阵 */}
-                        <div style={{ marginBottom: '24px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                            <h3 style={{ fontWeight: 800, marginBottom: '16px', fontSize: '1.1rem', color: '#1e293b' }}>🔲 SWOT 分析矩阵</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                <div style={{ padding: '20px', background: '#d4edda', borderRadius: '12px', border: '1px solid #c3e6cb' }}>
-                                    <div style={{ fontWeight: 800, color: '#155724', marginBottom: '12px', fontSize: '15px' }}>✅ 优势 (Strengths)</div>
+                        <div style={{ marginBottom: '40px', padding: '32px', background: '#fff', borderRadius: '20px', border: '2px solid #e2e8f0' }}>
+                            <h3 style={{ fontWeight: 800, marginBottom: '24px', fontSize: '1.65rem', color: '#1e293b' }}>🔲 SWOT 分析矩阵</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                <div style={{ padding: '28px', background: '#d4edda', borderRadius: '16px', border: '2px solid #c3e6cb' }}>
+                                    <div style={{ fontWeight: 800, color: '#155724', marginBottom: '16px', fontSize: '1.25rem' }}>✅ 优势 (Strengths)</div>
                                     {aiSections?.strengths && aiSections.strengths.length > 0 ? (
-                                        <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#155724', fontSize: '14px', lineHeight: 1.8 }}>
+                                        <ul style={{ margin: 0, padding: '0 0 0 24px', color: '#155724', fontSize: '1.15rem', lineHeight: 2 }}>
                                             {aiSections.strengths.map((s, i) => <li key={i}>{s}</li>)}
                                         </ul>
                                     ) : (
-                                        <div style={{ color: '#15572488', fontSize: '13px', fontStyle: 'italic' }}>等待 AI 深度分析生成...</div>
+                                        <div style={{ color: '#15572488', fontSize: '1.1rem', fontStyle: 'italic' }}>等待 AI 深度分析生成...</div>
                                     )}
                                 </div>
-                                <div style={{ padding: '20px', background: '#f8d7da', borderRadius: '12px', border: '1px solid #f5c6cb' }}>
-                                    <div style={{ fontWeight: 800, color: '#721c24', marginBottom: '12px', fontSize: '15px' }}>⚠️ 劣势 (Weaknesses)</div>
+                                <div style={{ padding: '28px', background: '#f8d7da', borderRadius: '16px', border: '2px solid #f5c6cb' }}>
+                                    <div style={{ fontWeight: 800, color: '#721c24', marginBottom: '16px', fontSize: '1.25rem' }}>⚠️ 劣势 (Weaknesses)</div>
                                     {aiSections?.weaknesses && aiSections.weaknesses.length > 0 ? (
-                                        <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#721c24', fontSize: '14px', lineHeight: 1.8 }}>
+                                        <ul style={{ margin: 0, padding: '0 0 0 24px', color: '#721c24', fontSize: '1.15rem', lineHeight: 2 }}>
                                             {aiSections.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
                                         </ul>
                                     ) : (
-                                        <div style={{ color: '#721c2488', fontSize: '13px', fontStyle: 'italic' }}>等待 AI 深度分析生成...</div>
+                                        <div style={{ color: '#721c2488', fontSize: '1.1rem', fontStyle: 'italic' }}>等待 AI 深度分析生成...</div>
                                     )}
                                 </div>
-                                <div style={{ padding: '20px', background: '#d1ecf1', borderRadius: '12px', border: '1px solid #bee5eb' }}>
-                                    <div style={{ fontWeight: 800, color: '#0c5460', marginBottom: '12px', fontSize: '15px' }}>💡 机会 (Opportunities)</div>
+                                <div style={{ padding: '28px', background: '#d1ecf1', borderRadius: '16px', border: '2px solid #bee5eb' }}>
+                                    <div style={{ fontWeight: 800, color: '#0c5460', marginBottom: '16px', fontSize: '1.25rem' }}>💡 机会 (Opportunities)</div>
                                     {aiSections?.opportunities && aiSections.opportunities.length > 0 ? (
-                                        <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#0c5460', fontSize: '14px', lineHeight: 1.8 }}>
+                                        <ul style={{ margin: 0, padding: '0 0 0 24px', color: '#0c5460', fontSize: '1.15rem', lineHeight: 2 }}>
                                             {aiSections.opportunities.map((s, i) => <li key={i}>{s}</li>)}
                                         </ul>
                                     ) : (
-                                        <div style={{ color: '#0c546088', fontSize: '13px', fontStyle: 'italic' }}>等待 AI 深度分析生成...</div>
+                                        <div style={{ color: '#0c546088', fontSize: '1.1rem', fontStyle: 'italic' }}>等待 AI 深度分析生成...</div>
                                     )}
                                 </div>
-                                <div style={{ padding: '20px', background: '#fff3cd', borderRadius: '12px', border: '1px solid #ffeeba' }}>
-                                    <div style={{ fontWeight: 800, color: '#856404', marginBottom: '12px', fontSize: '15px' }}>🚨 威胁 (Threats)</div>
+                                <div style={{ padding: '28px', background: '#fff3cd', borderRadius: '16px', border: '2px solid #ffeeba' }}>
+                                    <div style={{ fontWeight: 800, color: '#856404', marginBottom: '16px', fontSize: '1.25rem' }}>🚨 威胁 (Threats)</div>
                                     {aiSections?.threats && aiSections.threats.length > 0 ? (
-                                        <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#856404', fontSize: '14px', lineHeight: 1.8 }}>
+                                        <ul style={{ margin: 0, padding: '0 0 0 24px', color: '#856404', fontSize: '1.15rem', lineHeight: 2 }}>
                                             {aiSections.threats.map((s, i) => <li key={i}>{s}</li>)}
                                         </ul>
                                     ) : (
-                                        <div style={{ color: '#85640488', fontSize: '13px', fontStyle: 'italic' }}>等待 AI 深度分析生成...</div>
+                                        <div style={{ color: '#85640488', fontSize: '1.1rem', fontStyle: 'italic' }}>等待 AI 深度分析生成...</div>
                                     )}
                                 </div>
                             </div>
@@ -2475,10 +2488,10 @@ ${marketMetrics.map((m, i) => `${i + 1}. ${m.name}: ${values[m.id] || 0}${m.unit
 
                         {/* AI 专家深度洞察报告 - 分色区块对齐 index_Sample.html displayAIAnalysisResult */}
                         {aiSections ? (
-                            <div style={{ marginBottom: '24px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '0 4px' }}>
-                                    <span style={{ fontSize: '22px' }}>🤖</span>
-                                    <h3 style={{ fontWeight: 800, color: '#7c3aed', fontSize: '1.1rem', margin: 0 }}>AI 专家深度洞察报告</h3>
+                            <div style={{ marginBottom: '40px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', padding: '0 8px' }}>
+                                    <span style={{ fontSize: '32px' }}>🤖</span>
+                                    <h3 style={{ fontWeight: 800, color: '#7c3aed', fontSize: '1.65rem', margin: 0 }}>AI 专家深度洞察报告</h3>
                                 </div>
                                 {[
                                     { key: 'coreCompetence', title: '1. 🏆 核心竞争力分析', color: '#eef6ff', border: '#3498db', text: '#2c3e50' },
@@ -2490,9 +2503,9 @@ ${marketMetrics.map((m, i) => `${i + 1}. ${m.name}: ${values[m.id] || 0}${m.unit
                                     const content = (aiSections as any)[sec.key];
                                     if (!content) return null;
                                     return (
-                                        <div key={sec.key} style={{ background: sec.color, borderLeft: `5px solid ${sec.border}`, padding: '25px', borderRadius: '8px', marginBottom: '20px' }}>
-                                            <h4 style={{ color: sec.text, marginBottom: '15px', fontSize: '1.1rem', fontWeight: 700 }}>{sec.title}</h4>
-                                            <div style={{ color: '#333', lineHeight: 1.8, fontSize: '14px' }}
+                                        <div key={sec.key} style={{ background: sec.color, borderLeft: `8px solid ${sec.border}`, padding: '36px', borderRadius: '12px', marginBottom: '28px' }}>
+                                            <h4 style={{ color: sec.text, marginBottom: '20px', fontSize: '1.4rem', fontWeight: 800 }}>{sec.title}</h4>
+                                            <div style={{ color: '#333', lineHeight: 2, fontSize: '1.15rem' }}
                                                 dangerouslySetInnerHTML={{ __html: formatAIContent(content) }} />
                                         </div>
                                     );
