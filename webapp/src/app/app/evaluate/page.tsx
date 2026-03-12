@@ -118,6 +118,23 @@ function EvaluateContent() {
     const [assessmentResult, setAssessmentResult] = useState<any>(null)
     const [aiResult, setAiResult] = useState<any>(null)
 
+    // AI 解析後的各區塊內容 (對齊 index_Sample.html parseAIResponse)
+    const [aiSections, setAiSections] = useState<{
+        coreCompetence: string;
+        risks: string;
+        investmentValue: string;
+        recommendations: string;
+        fundingStrategy: string;
+        opportunities: string[];
+        threats: string[];
+        pestelInsight: string;
+        fourPInsight: string;
+        vrioInsight: string;
+        pestelScores: number[];
+        fourPScores: number[];
+        vrioScores: number[];
+    } | null>(null)
+
     // 本地實時計分 (對應付費會員輸入時的即時反饋)
     const liveAssessmentResult = useMemo(() => {
         return AssessmentEngine.runFullAssessment(values);
@@ -783,56 +800,176 @@ function EvaluateContent() {
         }
     }
 
+    // ==================== AI 提示詞生成 (對齊 index_Sample.html generateAIAnalysisPrompt) ====================
+    function generateAIPrompt() {
+        const result = assessmentResult || liveAssessmentResult;
+        const cs = result?.categoryScores || {};
+        const catScore = (cat: string) => Math.round(cs[cat]?.points || 0);
+        const catWeight = (cat: string) => (cs[cat]?.totalWeight || 0).toFixed(1);
+        const metricList = Object.entries(result?.metricResults || {}) as [string, any][];
+        const sorted = metricList.sort((a, b) => (b[1]?.points || 0) - (a[1]?.points || 0));
+        const top5 = sorted.slice(0, 5).map(([id, r]) => `${metrics.find(m => m.id === id)?.name || id}: ${(r?.points || 0).toFixed(1)}计分`);
+        const bottom5 = sorted.slice(-5).reverse().map(([id, r]) => `${metrics.find(m => m.id === id)?.name || id}: ${(r?.points || 0).toFixed(1)}计分`);
+        const financeMetrics = metrics.filter(m => m.category === 'finance').slice(0, 5);
+        const marketMetrics = metrics.filter(m => m.category === 'market').slice(0, 5);
+        const industryLabels: Record<string, string> = { tech: '科技/互联网', robot: '机器人/智能硬件', healthcare: '医疗健康', finance: '金融服务', manufacturing: '制造业', consumer: '消费零售', energy: '能源环保', other: '其他' };
+        const stageLabels: Record<string, string> = { seed: '种子期', angel: '天使轮', 'pre-a': 'Pre-A轮', a: 'A轮', 'a-plus': 'A+轮', 'pre-b': 'Pre-B轮', b: 'B轮', 'b-plus': 'B+轮', 'pre-c': 'Pre-C轮', c: 'C轮', 'c-plus': 'C+轮', ipo: 'IPO准备期' };
+        return `
+作为专业的投资分析师，请基于以下企业评估数据提供深度分析：
+
+【企业基本信息】
+- 企业名称：${companyInfo.companyName || '未命名企业'}
+- 所属行业：${industryLabels[companyInfo.industry] || companyInfo.industry}
+- 融资阶段：${stageLabels[companyInfo.fundingStage] || companyInfo.fundingStage}
+- 评估日期：${companyInfo.evaluationDate || new Date().toISOString().split('T')[0]}
+
+【综合评估结果】
+- 总体得分：${(result?.totalScore || 0).toFixed(1)}
+- 团队能力得分：${catScore('team')} (权重${catWeight('team')}%)
+- 产品技术得分：${catScore('product')} (权重${catWeight('product')}%)
+- 市场竞争力得分：${catScore('market')} (权重${catWeight('market')}%)
+- 财务状况得分：${catScore('finance')} (权重${catWeight('finance')}%)
+- 运营效率得分：${catScore('operations')} (权重${catWeight('operations')}%)
+- 战略治理得分：${catScore('strategy')} (权重${catWeight('strategy')}%)
+- 可持续发展得分：${catScore('sustainability')} (权重${catWeight('sustainability')}%)
+
+【关键优势指标】 (请基于以下数据点，用文字详细描述企业的核心优势，条列式显示，不要显示具体计分数字)
+${top5.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+
+【关键短板指标】 (请基于以下数据点，用文字详细描述企业的主要缺点和改进方向，条列式显示，不要显示具体计分数字)
+${bottom5.map((w, i) => `${i + 1}. ${w}`).join('\n')}
+
+【财务关键数据】
+${financeMetrics.map((m, i) => `${i + 1}. ${m.name}: ${values[m.id] || 0}${m.unit}`).join('\n')}
+
+【市场关键数据】
+${marketMetrics.map((m, i) => `${i + 1}. ${m.name}: ${values[m.id] || 0}${m.unit}`).join('\n')}
+
+请按照以下结构提供分析(请严格按照1到11的数字序号输出，不要使用任何 \`#\` 等Markdown标题符号)：
+1. 企业核心竞争力分析 (详细描述优势)
+2. 主要风险与劣势识别 (详细描述缺点及风险，不要显示分值)
+3. 投资价值评估
+4. 具体改进建议 (此部分内容仅限产品、技术、团队、运营等方面，不包含融资及估值相关建议)
+5. 融资策略建议 (必须包含：估值逻辑分析、建议融资额度、资金用途计划、以及对投资方的核心建议)
+6. 市场机会与潜在机遇 (SWOT Opportunities)
+7. 外部威胁与挑战 (SWOT Threats)
+8. PESTEL 宏观环境分析评分 (请提供6个0-100的计分数字，顺序必须为：[P.政治, E.经济, S.社会, T.技术, E.环境, L.法律。格式如：PES:[70, 65, 80, 55, 90, 75]])
+9. 4P 营销矩阵分析评分 (请提供4个0-100的计分数字，顺序必须为：[1.产品, 2.价格, 3.渠道, 4.促销。格式如：4P:[75, 80, 70, 65]])
+10. VRIO 核心竞争力分析评分 (请提供4个0-100的计分数字，顺序必须为：[1.价值, 2.稀缺性, 3.难以模仿性, 4.组织。格式如：VRIO:[85, 75, 90, 80]])
+11. PESTEL/4P/VRIO 深度见解 (请分别为这三个工具提供简短的分析总结，并使用标签包裹，格式如：[PESTEL-Start]内容[PESTEL-End], [4P-Start]内容[4P-End], [VRIO-Start]内容[VRIO-End])
+
+要求：
+- 分析要具体、有针对性
+- 建议要可操作、可执行
+- 考虑行业特点和融资阶段
+- 使用专业投资分析语言
+- 提供具体数据和理由支持观点
+- **严禁输出任何形式的免责声明、合规提示、或结语客套话，只输出上述 1 到 11 点即可。**
+`;
+    }
+
+    // ==================== AI 響應解析 (對齊 index_Sample.html parseAIResponse) ====================
+    function parseAIResponse(aiContent: string) {
+        const sections: any = {
+            coreCompetence: '', risks: '', investmentValue: '', recommendations: '',
+            fundingStrategy: '', opportunities: [], threats: [],
+            pestelInsight: '', fourPInsight: '', vrioInsight: '',
+            pestelScores: [], fourPScores: [], vrioScores: []
+        };
+
+        // 提取評分數字 PES:[...], 4P:[...], VRIO:[...]
+        const pestelMatch = aiContent.match(/PES:\[([\d,\s]+)\]/);
+        if (pestelMatch) sections.pestelScores = pestelMatch[1].split(',').map((s: string) => parseInt(s.trim())).filter((n: number) => !isNaN(n));
+        const fourPMatch = aiContent.match(/4P:\[([\d,\s]+)\]/);
+        if (fourPMatch) sections.fourPScores = fourPMatch[1].split(',').map((s: string) => parseInt(s.trim())).filter((n: number) => !isNaN(n));
+        const vrioMatch = aiContent.match(/VRIO:\[([\d,\s]+)\]/);
+        if (vrioMatch) sections.vrioScores = vrioMatch[1].split(',').map((s: string) => parseInt(s.trim())).filter((n: number) => !isNaN(n));
+
+        // 提取深度見解標籤
+        const pestelInsightMatch = aiContent.match(/\[PESTEL-Start\]([\s\S]*?)\[PESTEL-End\]/);
+        if (pestelInsightMatch) sections.pestelInsight = pestelInsightMatch[1].trim();
+        const fourPInsightMatch = aiContent.match(/\[4P-Start\]([\s\S]*?)\[4P-End\]/);
+        if (fourPInsightMatch) sections.fourPInsight = fourPInsightMatch[1].trim();
+        const vrioInsightMatch = aiContent.match(/\[VRIO-Start\]([\s\S]*?)\[VRIO-End\]/);
+        if (vrioInsightMatch) sections.vrioInsight = vrioInsightMatch[1].trim();
+
+        // 解析各章節文本
+        const lines = aiContent.split('\n');
+        let currentSection = '';
+        lines.forEach((line: string) => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+            const isHeading = /^[0-9]+\s*[.、]/.test(trimmed);
+            if (isHeading) {
+                if (trimmed.includes('核心竞争力') || trimmed.includes('竞争优势') || trimmed.includes('核心优势')) currentSection = 'coreCompetence';
+                else if (trimmed.includes('风险') || trimmed.includes('劣势')) currentSection = 'risks';
+                else if (trimmed.includes('投资价值') || trimmed.includes('价值评估')) currentSection = 'investmentValue';
+                else if (trimmed.includes('改进建议') || trimmed.includes('具体改进') || trimmed.includes('优化建议')) currentSection = 'recommendations';
+                else if (trimmed.includes('融资策略') || trimmed.includes('融资建议')) currentSection = 'fundingStrategy';
+                else if (trimmed.includes('市场机会') || trimmed.includes('机遇') || trimmed.includes('Opportunities')) currentSection = 'opportunities';
+                else if (trimmed.includes('外部威胁') || trimmed.includes('挑战') || trimmed.includes('Threats')) currentSection = 'threats';
+                else if (trimmed.includes('PESTEL') || trimmed.includes('4P') || trimmed.includes('VRIO') || trimmed.includes('深度见解')) currentSection = 'skip';
+                else currentSection = '';
+                return;
+            }
+            if (!currentSection || currentSection === 'skip') return;
+            if (currentSection === 'opportunities' || currentSection === 'threats') {
+                if (trimmed.length > 3) sections[currentSection].push(trimmed.replace(/^[-*•\d一二三四五六七八九十]+[.、\s]*/, ''));
+            } else {
+                sections[currentSection] += (sections[currentSection] ? '\n' : '') + line;
+            }
+        });
+
+        return sections;
+    }
+
+    // ==================== AI 內容格式化 (對齊 index_Sample.html formatAIContent) ====================
+    function formatAIContent(content: string) {
+        if (!content) return '';
+        return content.split('\n').map((line: string) => {
+            const trimmed = line.trim();
+            if (!trimmed) return '';
+            let formatted = trimmed
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/([0-9一二三四五六七八九十])、/g, '<strong>$1、</strong>');
+            if (/^[-*•]/.test(trimmed)) {
+                return `<p style="margin-bottom:8px;padding-left:20px;">• ${formatted.replace(/^[-*•]\s*/, '')}</p>`;
+            }
+            return `<p style="margin-bottom:8px;">${formatted}</p>`;
+        }).filter((p: string) => p !== '').join('');
+    }
+
     async function handleAiAnalyze() {
         setError(''); setAiLoading(true)
         try {
-            // 1. 数据校验：检查是否有有效的评分结果
-            const targetResult = assessmentResult;
-            if (!targetResult || !targetResult.finalResult || targetResult.finalResult.finalScore === 0) {
-                // 嘗試立即重新計算一次
-                const recalculated = await handleCalculate();
-                if (!recalculated || recalculated.finalResult.finalScore === 0) {
-                    throw new Error('请先输入数据或载入示例以供 AI 分析');
-                }
+            // 1. 數據校驗
+            const targetResult = assessmentResult || liveAssessmentResult;
+            if (!targetResult || (targetResult.totalScore || 0) === 0) {
+                throw new Error('请先输入数据或载入示例以供 AI 分析');
             }
 
-            // 2. 自动测试连接：检查 API Key 是否有效
-            // 在開發/展示環境下，如果 api-lab 返回 404 或失效，給予明確提示
-            try {
-                const verifyRes = await fetch('/api/ai-lab/verify');
-                if (!verifyRes.ok) {
-                    throw new Error('AI 服务连接失败，请检查 API 设置');
-                }
-                const verifyData = await verifyRes.json();
-                if (!verifyData.verified) {
-                    throw new Error('请完成AI连接 (API Key 验证未通过)');
-                }
-            } catch (vErr: any) {
-                if (vErr.message.includes('API')) throw vErr;
-                throw new Error('无法连接到 AI 控制中枢，请检查网络或 API 设置');
-            }
+            // 2. 生成提示詞並調用 AI
+            const prompt = generateAIPrompt();
+            const systemPrompt = `你是一位资深的风险投资分析师，拥有10年以上企业评估和投资决策经验。你的任务是：\n1. 基于提供的企业评估数据，提供专业、客观、深入的分析\n2. 识别企业的核心竞争优势和主要风险点\n3. 评估企业的投资价值和成长潜力\n4. 提供具体、可操作的改进建议\n5. 给出适合当前融资阶段的策略建议\n请保持分析的专业性和客观性，避免过度乐观或悲观的表述。**严禁输出免责声明或法律合规提示。**`;
 
-            const res = await fetch('/api/assessment/ai-analysis', {
+            const res = await fetch('/api/assessment/oversea-analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    companyInfo: {
-                        name: companyInfo.companyName,
-                        industry: companyInfo.industry,
-                        fundingStage: companyInfo.fundingStage
-                    },
-                    resultSummary: assessmentResult,
-                    type: 'comprehensive',
-                    aiConfig: aiConfig
-                })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'AI 分析失败')
-            setAiResult({ content: data.content })
-            setSuccess('✅ AI 深度分析完成')
-            // 自动跳转到显示结果的区域
-            const aiReportEl = document.getElementById('ai-report-section');
-            if (aiReportEl) aiReportEl.scrollIntoView({ behavior: 'smooth' });
+                body: JSON.stringify({ prompt, systemPrompt, config: { ...aiConfig, maxTokens: 4000 } })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || data.message || 'AI 分析失败');
+            const rawContent = data.content;
+            setAiResult({ content: rawContent });
+
+            // 3. 解析並設置各區塊
+            const parsed = parseAIResponse(rawContent);
+            setAiSections(parsed);
+
+            setSuccess('✅ AI 深度分析完成');
+            setActiveTab('分析');
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -904,6 +1041,14 @@ function EvaluateContent() {
     const [activeTab, setActiveTab] = useState<'指标' | '结果' | '分析' | '报告'>('指标')
     const [activeAnalysisTab, setActiveAnalysisTab] = useState<'pestel' | 'fourP' | 'vrio'>('pestel')
     const [activeReportTab, setActiveReportTab] = useState<'metrics' | 'pestel' | 'fourP' | 'vrio'>('metrics')
+
+    // 切換到「分析」標籤時，若有評估結果但無 AI 分析，自動觸發
+    useEffect(() => {
+        if (activeTab === '分析' && (assessmentResult || liveAssessmentResult?.totalScore > 0) && !aiSections && !aiLoading) {
+            handleAiAnalyze();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab]);
 
     // === 輔助計算函數 ===
 
@@ -990,69 +1135,75 @@ function EvaluateContent() {
         return gradeMap[grade] || gradeMap['C'];
     }, [assessmentResult, liveAssessmentResult]);
 
-    // 生成 PESTEL 柱狀圖數據
+    // 生成 PESTEL 柱狀圖數據 (優先使用 AI 評分)
     const pestelChartData = useMemo(() => {
         const result = assessmentResult || liveAssessmentResult;
         const cs = result?.categoryScores || {};
+        const aiScores = aiSections?.pestelScores;
+        const data = aiScores && aiScores.length === 6 ? aiScores : [
+            Math.round((cs['strategy']?.score || 0) * 0.8),
+            Math.round((cs['finance']?.score || 0) * 0.9),
+            Math.round((cs['market']?.score || 0) * 0.85),
+            Math.round((cs['product']?.score || 0) * 0.95),
+            Math.round((cs['sustainability']?.score || 0)),
+            Math.round((cs['operations']?.score || 0) * 0.9)
+        ];
         return {
             labels: ['政治(P)', '經濟(E)', '社會(S)', '技術(T)', '環境(E)', '法律(L)'],
             datasets: [{
                 label: 'PESTEL 評分',
-                data: [
-                    Math.round((cs['strategy']?.score || 0) * 0.8),
-                    Math.round((cs['finance']?.score || 0) * 0.9),
-                    Math.round((cs['market']?.score || 0) * 0.85),
-                    Math.round((cs['product']?.score || 0) * 0.95),
-                    Math.round((cs['sustainability']?.score || 0)),
-                    Math.round((cs['operations']?.score || 0) * 0.9)
-                ],
+                data,
                 backgroundColor: ['rgba(52,152,219,0.7)', 'rgba(46,204,113,0.7)', 'rgba(241,196,15,0.7)', 'rgba(155,89,182,0.7)', 'rgba(26,188,156,0.7)', 'rgba(230,126,34,0.7)'],
                 borderRadius: 6,
             }]
         };
-    }, [assessmentResult, liveAssessmentResult]);
+    }, [assessmentResult, liveAssessmentResult, aiSections]);
 
-    // 生成 4P 柱狀圖數據
+    // 生成 4P 柱狀圖數據 (優先使用 AI 評分)
     const fourPChartData = useMemo(() => {
         const result = assessmentResult || liveAssessmentResult;
         const cs = result?.categoryScores || {};
+        const aiScores = aiSections?.fourPScores;
+        const data = aiScores && aiScores.length === 4 ? aiScores : [
+            Math.round((cs['product']?.score || 0)),
+            Math.round((cs['finance']?.score || 0) * 0.85),
+            Math.round((cs['operations']?.score || 0) * 0.9),
+            Math.round((cs['market']?.score || 0) * 0.95)
+        ];
         return {
             labels: ['產品(Product)', '定價(Price)', '通路(Place)', '推廣(Promotion)'],
             datasets: [{
                 label: '4P 評分',
-                data: [
-                    Math.round((cs['product']?.score || 0)),
-                    Math.round((cs['finance']?.score || 0) * 0.85),
-                    Math.round((cs['operations']?.score || 0) * 0.9),
-                    Math.round((cs['market']?.score || 0) * 0.95)
-                ],
+                data,
                 backgroundColor: ['rgba(52,152,219,0.7)', 'rgba(46,204,113,0.7)', 'rgba(241,196,15,0.7)', 'rgba(231,76,60,0.7)'],
                 borderRadius: 6,
             }]
         };
-    }, [assessmentResult, liveAssessmentResult]);
+    }, [assessmentResult, liveAssessmentResult, aiSections]);
 
-    // 生成 VRIO 雷達圖數據
+    // 生成 VRIO 雷達圖數據 (優先使用 AI 評分)
     const vrioChartData = useMemo(() => {
         const result = assessmentResult || liveAssessmentResult;
         const cs = result?.categoryScores || {};
+        const aiScores = aiSections?.vrioScores;
+        const data = aiScores && aiScores.length === 4 ? aiScores : [
+            Math.round((cs['product']?.score || 0) * 0.9),
+            Math.round((cs['strategy']?.score || 0) * 0.85),
+            Math.round(((cs['product']?.score || 0) + (cs['team']?.score || 0)) / 2 * 0.9),
+            Math.round((cs['operations']?.score || 0))
+        ];
         return {
             labels: ['有价值(V)', '稀缺(R)', '难模仿(I)', '有组织(O)'],
             datasets: [{
                 label: 'VRIO 競爭力',
-                data: [
-                    Math.round((cs['product']?.score || 0) * 0.9),
-                    Math.round((cs['strategy']?.score || 0) * 0.85),
-                    Math.round(((cs['product']?.score || 0) + (cs['team']?.score || 0)) / 2 * 0.9),
-                    Math.round((cs['operations']?.score || 0))
-                ],
+                data,
                 backgroundColor: 'rgba(108,92,231,0.2)',
                 borderColor: 'rgba(108,92,231,1)',
                 borderWidth: 2,
                 pointBackgroundColor: 'rgba(108,92,231,1)',
             }]
         };
-    }, [assessmentResult, liveAssessmentResult]);
+    }, [assessmentResult, liveAssessmentResult, aiSections]);
 
     // 生成核心短板雷達圖數據（差距分值 = 100 - score）
     const weaknessRadarData = useMemo(() => {
@@ -2151,6 +2302,31 @@ function EvaluateContent() {
 
                 {activeTab === '分析' && (
                     <div style={{ animation: 'fadeIn 0.3s ease' }}>
+
+                        {/* AI 分析狀態列 */}
+                        {aiLoading && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '12px', marginBottom: '24px', border: '1px solid #ddd6fe' }}>
+                                <span className="spinner" />
+                                <span style={{ fontWeight: 700, color: '#7c3aed', fontSize: '15px' }}>正在進行 AI 深度分析，請稍候...</span>
+                            </div>
+                        )}
+                        {!aiLoading && !aiSections && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: '#fff8e1', borderRadius: '10px', marginBottom: '20px', border: '1px solid #ffe082' }}>
+                                <span style={{ color: '#856404', fontSize: '14px' }}>尚未生成 AI 深度分析，點擊右側按鈕開始分析。</span>
+                                <button onClick={handleAiAnalyze} disabled={aiLoading} style={{ background: 'linear-gradient(135deg, #a855f7, #7c3aed)', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '14px' }}>
+                                    🤖 立即 AI 分析
+                                </button>
+                            </div>
+                        )}
+                        {aiSections && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#d4edda', borderRadius: '10px', marginBottom: '20px', border: '1px solid #c3e6cb' }}>
+                                <span style={{ color: '#155724', fontSize: '14px', fontWeight: 600 }}>✅ AI 深度分析已完成</span>
+                                <button onClick={handleAiAnalyze} disabled={aiLoading} style={{ background: 'rgba(21,87,36,0.1)', color: '#155724', border: '1px solid #c3e6cb', padding: '5px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                                    🔄 重新分析
+                                </button>
+                            </div>
+                        )}
+
                         {/* 企業體質分析計分卡 */}
                         <div style={{ marginBottom: '32px', padding: '24px', background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
                             <h3 style={{ fontWeight: 800, marginBottom: '16px', fontSize: '1.1rem', color: '#1e293b' }}>🏢 企業體質分析（基於計分）</h3>
@@ -2195,12 +2371,14 @@ function EvaluateContent() {
                                     <div style={{ height: '280px' }}>
                                         <Bar data={pestelChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }} />
                                     </div>
-                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px' }}>
+                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px', overflowY: 'auto', maxHeight: '280px' }}>
                                         <h4 style={{ color: '#1e293b', marginBottom: '12px' }}><span>🌍</span> PESTEL 深度見解</h4>
-                                        <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}>
-                                            {aiResult ? <div dangerouslySetInnerHTML={{ __html: aiResult.content.replace(/\n/g, '<br/>').substring(0, 600) + '...' }} /> :
-                                                <p style={{ color: '#7f8c8d', fontStyle: 'italic' }}>等待 AI 分析生成宏觀環境見解...<br/>請點擊頂部「AI深度分析」按鈕生成。</p>}
-                                        </div>
+                                        {aiSections?.pestelInsight ? (
+                                            <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}
+                                                dangerouslySetInnerHTML={{ __html: formatAIContent(aiSections.pestelInsight) }} />
+                                        ) : (
+                                            <p style={{ color: '#7f8c8d', fontStyle: 'italic', fontSize: '13px' }}>等待 AI 分析生成宏觀環境見解...</p>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -2209,12 +2387,14 @@ function EvaluateContent() {
                                     <div style={{ height: '280px' }}>
                                         <Bar data={fourPChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }} />
                                     </div>
-                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px' }}>
+                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px', overflowY: 'auto', maxHeight: '280px' }}>
                                         <h4 style={{ color: '#1e293b', marginBottom: '12px' }}><span>📢</span> 4P 營銷策略建議</h4>
-                                        <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}>
-                                            {aiResult ? <div dangerouslySetInnerHTML={{ __html: aiResult.content.replace(/\n/g, '<br/>').substring(200, 800) + '...' }} /> :
-                                                <p style={{ color: '#7f8c8d', fontStyle: 'italic' }}>等待 AI 分析生成營銷策略建議...<br/>請點擊頂部「AI深度分析」按鈕生成。</p>}
-                                        </div>
+                                        {aiSections?.fourPInsight ? (
+                                            <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}
+                                                dangerouslySetInnerHTML={{ __html: formatAIContent(aiSections.fourPInsight) }} />
+                                        ) : (
+                                            <p style={{ color: '#7f8c8d', fontStyle: 'italic', fontSize: '13px' }}>等待 AI 分析生成營銷策略建議...</p>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -2223,12 +2403,14 @@ function EvaluateContent() {
                                     <div style={{ height: '280px' }}>
                                         <Radar data={vrioChartData} options={{ ...radarOptions, scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false } } } }} />
                                     </div>
-                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px' }}>
-                                        <h4 style={{ color: '#1e293b', marginBottom: '12px' }}><span>🛡️</span> VRIO 護城河分析</h4>
-                                        <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}>
-                                            {aiResult ? <div dangerouslySetInnerHTML={{ __html: aiResult.content.replace(/\n/g, '<br/>').substring(400, 1000) + '...' }} /> :
-                                                <p style={{ color: '#7f8c8d', fontStyle: 'italic' }}>等待 AI 分析生成核心競爭力見解...<br/>請點擊頂部「AI深度分析」按鈕生成。</p>}
-                                        </div>
+                                    <div style={{ padding: '12px 20px', background: '#f8fafc', borderRadius: '12px', overflowY: 'auto', maxHeight: '280px' }}>
+                                        <h4 style={{ color: '#1e293b', marginBottom: '12px' }}><span>🛡️</span> VRIO 足城河分析</h4>
+                                        {aiSections?.vrioInsight ? (
+                                            <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.8 }}
+                                                dangerouslySetInnerHTML={{ __html: formatAIContent(aiSections.vrioInsight) }} />
+                                        ) : (
+                                            <p style={{ color: '#7f8c8d', fontStyle: 'italic', fontSize: '13px' }}>等待 AI 分析生成核心競爭力見解...</p>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -2253,40 +2435,64 @@ function EvaluateContent() {
                                 <div style={{ padding: '20px', background: '#d1ecf1', borderRadius: '12px', border: '1px solid #bee5eb' }}>
                                     <div style={{ fontWeight: 800, color: '#0c5460', marginBottom: '12px', fontSize: '15px' }}>💡 機會 (Opportunities)</div>
                                     <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#0c5460', fontSize: '14px', lineHeight: 1.8 }}>
-                                        {generateSwot.opportunities.map((s, i) => <li key={i}>{s}</li>)}
+                                        {(aiSections?.opportunities && aiSections.opportunities.length > 0
+                                            ? aiSections.opportunities
+                                            : generateSwot.opportunities
+                                        ).map((s, i) => <li key={i}>{s}</li>)}
                                     </ul>
                                 </div>
                                 <div style={{ padding: '20px', background: '#fff3cd', borderRadius: '12px', border: '1px solid #ffeeba' }}>
-                                    <div style={{ fontWeight: 800, color: '#856404', marginBottom: '12px', fontSize: '15px' }}>🚨 威脅 (Threats)</div>
+                                    <div style={{ fontWeight: 800, color: '#856404', marginBottom: '12px', fontSize: '15px' }}>🚨 威脇 (Threats)</div>
                                     <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#856404', fontSize: '14px', lineHeight: 1.8 }}>
-                                        {generateSwot.threats.map((s, i) => <li key={i}>{s}</li>)}
+                                        {(aiSections?.threats && aiSections.threats.length > 0
+                                            ? aiSections.threats
+                                            : generateSwot.threats
+                                        ).map((s, i) => <li key={i}>{s}</li>)}
                                     </ul>
                                 </div>
                             </div>
                         </div>
 
-                        {/* AI 分析結果區 */}
-                        {aiResult && (
-                            <div style={{ padding: '24px', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '16px', marginBottom: '24px' }}>
-                                <h3 style={{ color: '#7c3aed', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <span>🤖</span> AI 專家深度洞察報告
-                                </h3>
-                                <div style={{ whiteSpace: 'pre-wrap', lineHeight: 2, color: '#4b5563', fontSize: '15px' }}>{aiResult.content}</div>
+                        {/* AI 專家深度洞察報告 - 分色區塊對齊 index_Sample.html displayAIAnalysisResult */}
+                        {aiSections ? (
+                            <div style={{ marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '0 4px' }}>
+                                    <span style={{ fontSize: '22px' }}>🤖</span>
+                                    <h3 style={{ fontWeight: 800, color: '#7c3aed', fontSize: '1.1rem', margin: 0 }}>AI 專家深度洞察報告</h3>
+                                </div>
+                                {[
+                                    { key: 'coreCompetence', title: '1. 🏆 核心競爭力分析', color: '#eef6ff', border: '#3498db', text: '#2c3e50' },
+                                    { key: 'risks', title: '2. ⚠️ 主要风险因素', color: '#fff5f5', border: '#e74c3c', text: '#c0392b' },
+                                    { key: 'investmentValue', title: '3. 💰 投资价値评估', color: '#f0fff4', border: '#2ecc71', text: '#27ae60' },
+                                    { key: 'recommendations', title: '4. 🔧 改进建议', color: '#fff9eb', border: '#f39c12', text: '#d35400' },
+                                    { key: 'fundingStrategy', title: '5. 🚀 融资策略建议', color: '#f5f0ff', border: '#9b59b6', text: '#8e44ad' },
+                                ].map(sec => {
+                                    const content = (aiSections as any)[sec.key];
+                                    if (!content) return null;
+                                    return (
+                                        <div key={sec.key} style={{ background: sec.color, borderLeft: `5px solid ${sec.border}`, padding: '25px', borderRadius: '8px', marginBottom: '20px' }}>
+                                            <h4 style={{ color: sec.text, marginBottom: '15px', fontSize: '1.1rem', fontWeight: 700 }}>{sec.title}</h4>
+                                            <div style={{ color: '#333', lineHeight: 1.8, fontSize: '14px' }}
+                                                dangerouslySetInnerHTML={{ __html: formatAIContent(content) }} />
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        )}
-                        {!aiResult && (
+                        ) : (
                             <div style={{ textAlign: 'center', padding: '32px', background: '#fff', borderRadius: '12px', border: '2px dashed #e2e8f0', marginBottom: '24px' }}>
                                 <div style={{ fontSize: '40px', marginBottom: '12px' }}>🤖</div>
-                                <h3 style={{ marginBottom: '8px' }}>尚未生成 AI 深度分析</h3>
-                                <p style={{ color: '#64748b', marginBottom: '16px' }}>點擊頂部的「AI深度分析」按鈕，由 AI算法實驗室 為您生成 PESTEL/4P/VRIO 專家洞察</p>
-                                <button onClick={handleAiAnalyze} style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '10px 28px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }} disabled={aiLoading}>
-                                    {aiLoading ? <span className="spinner" /> : '立即開始 AI 分析'}
-                                </button>
+                                <h3 style={{ marginBottom: '8px' }}>{aiLoading ? 'AI 分析進行中...' : '尚未生成 AI 深度分析'}</h3>
+                                <p style={{ color: '#64748b', marginBottom: '16px' }}>{aiLoading ? '請稍候，AI 正在分析中...' : '點擊頂部的「AI深度分析」按鈕，由 AI算法實驗室 為您生成 PESTEL/4P/VRIO 專家洞察'}</p>
+                                {!aiLoading && <button onClick={handleAiAnalyze} style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '10px 28px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }} disabled={aiLoading}>
+                                    立即開始 AI 分析
+                                </button>}
                             </div>
                         )}
+
                         <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '16px 0' }}>@2026 AI先进技术实验室 | 128维度向量数据库+AI算法分析</div>
                     </div>
                 )}
+
 
                 {activeTab === '报告' && (
                     <div style={{ animation: 'fadeIn 0.3s ease' }}>
