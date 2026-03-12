@@ -1,12 +1,24 @@
 'use client'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 export default function PricingPage() {
     const router = useRouter()
+    const [currentTier, setCurrentTier] = useState<string | null>(null)
+
+    useEffect(() => {
+        fetch('/api/usage')
+            .then(res => res.json())
+            .then(data => {
+                if (data.tier) setCurrentTier(data.tier)
+            })
+            .catch(() => {})
+    }, [])
 
     const plans = [
         {
+            id: 'free',
             tier: '免费会员',
             price: '¥0',
             period: '',
@@ -17,6 +29,7 @@ export default function PricingPage() {
             link: '/register'
         },
         {
+            id: 'standard',
             tier: '标准会员',
             price: '¥888',
             period: '/年',
@@ -28,6 +41,7 @@ export default function PricingPage() {
             link: '/login'
         },
         {
+            id: 'premium',
             tier: '高级会员',
             price: '¥1,688',
             period: '/年',
@@ -60,50 +74,59 @@ export default function PricingPage() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
-                    {plans.map((p, i) => (
-                        <div key={i} style={{
-                            background: p.recommended ? '#fff' : 'rgba(255,255,255,0.05)',
-                            borderRadius: '24px',
-                            padding: '40px 32px',
-                            border: p.recommended ? '3px solid #2563eb' : '1px solid rgba(255,255,255,0.1)',
-                            position: 'relative',
-                            boxShadow: p.recommended ? '0 20px 40px rgba(0,0,0,0.3)' : 'none',
-                            transition: 'transform 0.3s ease',
-                        }}>
-                            {p.recommended && (
-                                <div style={{ position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%)', background: '#2563eb', color: '#fff', padding: '6px 20px', borderRadius: '20px', fontSize: '14px', fontWeight: 700 }}>
-                                    最受歡迎
-                                </div>
-                            )}
+                    {plans.map((p, i) => {
+                        const isCurrent = currentTier === p.id
+                        const btnLabel = isCurrent ? '开始使用' : p.btnText
+                        const btnHref = isCurrent ? '/app/evaluate' : p.link
 
-                            <div style={{ color: p.recommended ? '#1e293b' : '#fff', fontWeight: 700, fontSize: '20px', marginBottom: '12px' }}>{p.tier}</div>
-                            <div style={{ color: p.color, fontSize: '48px', fontWeight: 800, marginBottom: '8px' }}>
-                                {p.price}
-                                <span style={{ fontSize: '18px', fontWeight: 400, opacity: 0.7 }}>{p.period}</span>
-                            </div>
-                            <p style={{ color: p.recommended ? '#64748b' : 'rgba(255,255,255,0.6)', fontSize: '15px', marginBottom: '32px', minHeight: '45px' }}>{p.desc}</p>
-
-                            <div style={{ borderTop: `1px solid ${p.recommended ? '#f1f5f9' : 'rgba(255,255,255,0.1)'}`, paddingTop: '32px', marginBottom: '40px' }}>
-                                {p.features.map((f, j) => (
-                                    <div key={j} style={{ color: p.recommended ? '#334155' : 'rgba(255,255,255,0.8)', fontSize: '15px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        {f}
-                                    </div>
-                                ))}
-                            </div>
-
-                            <Link href={p.link} className="btn btn-block btn-lg" style={{
-                                background: p.recommended ? '#2563eb' : 'transparent',
-                                color: p.recommended ? '#fff' : '#fff',
-                                border: p.recommended ? 'none' : '2px solid rgba(255,255,255,0.2)',
-                                fontWeight: 700,
-                                fontSize: '18px',
-                                borderRadius: '12px',
-                                padding: '16px'
+                        return (
+                            <div key={i} style={{
+                                background: p.recommended ? '#fff' : 'rgba(255,255,255,0.05)',
+                                borderRadius: '24px',
+                                padding: '40px 32px',
+                                border: p.recommended ? '3px solid #2563eb' : '1px solid rgba(255,255,255,0.1)',
+                                position: 'relative',
+                                boxShadow: p.recommended ? '0 20px 40px rgba(0,0,0,0.3)' : 'none',
+                                transition: 'transform 0.3s ease',
                             }}>
-                                {p.btnText}
-                            </Link>
-                        </div>
-                    ))}
+                                {p.recommended && (
+                                    <div style={{ position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%)', background: '#2563eb', color: '#fff', padding: '6px 20px', borderRadius: '20px', fontSize: '14px', fontWeight: 700 }}>
+                                        最受歡迎
+                                    </div>
+                                )}
+
+                                <div style={{ color: p.recommended ? '#1e293b' : '#fff', fontWeight: 700, fontSize: '20px', marginBottom: '12px' }}>{p.tier}</div>
+                                <div style={{ color: p.color, fontSize: '48px', fontWeight: 800, marginBottom: '8px' }}>
+                                    {p.price}
+                                    <span style={{ fontSize: '18px', fontWeight: 400, opacity: 0.7 }}>{p.period}</span>
+                                </div>
+                                <p style={{ color: p.recommended ? '#64748b' : 'rgba(255,255,255,0.6)', fontSize: '15px', marginBottom: '32px', minHeight: '45px' }}>{p.desc}</p>
+
+                                <div style={{ borderTop: `1px solid ${p.recommended ? '#f1f5f9' : 'rgba(255,255,255,0.1)'}`, paddingTop: '32px', marginBottom: '40px' }}>
+                                    {p.features.map((f, j) => (
+                                        <div key={j} style={{ color: p.recommended ? '#334155' : 'rgba(255,255,255,0.8)', fontSize: '15px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            {f}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <Link href={btnHref} className="btn btn-block btn-lg" style={{
+                                    background: isCurrent ? '#10b981' : (p.recommended ? '#2563eb' : 'transparent'),
+                                    color: (isCurrent || p.recommended) ? '#fff' : '#fff',
+                                    border: (isCurrent || p.recommended) ? 'none' : '2px solid rgba(255,255,255,0.2)',
+                                    fontWeight: 700,
+                                    fontSize: '18px',
+                                    borderRadius: '12px',
+                                    padding: '16px',
+                                    textAlign: 'center',
+                                    display: 'block',
+                                    textDecoration: 'none'
+                                }}>
+                                    {btnLabel}
+                                </Link>
+                            </div>
+                        )
+                    })}
                 </div>
 
                 <div style={{ marginTop: '80px', textAlign: 'center', padding: '40px', background: 'rgba(255,255,255,0.03)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -116,7 +139,7 @@ export default function PricingPage() {
             </div>
 
             <div style={{ textAlign: 'center', opacity: 0.5, fontSize: '14px', paddingTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '40px' }}>
-                © 2026 企业出海与投资评估分析系统 · AI算法实验室
+                © 2026 企业出海与投资评估 analysis 系统 · AI算法实验室
             </div>
         </div>
     )
