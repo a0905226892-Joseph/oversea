@@ -48,7 +48,7 @@ export default function PricingPage() {
             desc: '不限次数深度分析',
             features: ['✅ 所有标准功能', '✅ 无限次 AI分析', '✅ 优先客服支持', '✅ 数据导出'],
             color: '#d97706',
-            btnText: '联系获取',
+            btnText: '立即购买',
             link: '/login'
         },
     ]
